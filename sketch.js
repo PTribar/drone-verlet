@@ -117,12 +117,24 @@ function retry() {
 }
 
 function droneControl() {
-  if (pressed.has("KeyQ") && canControl) {
+  let tapLeft = false;
+  let tapRight = false;
+  
+  touches.forEach(touch => {
+    if (touch.x < windowWidth/2) {
+      tapLeft = true;
+    } else {
+      tapRight = true;
+    }
+  })
+  
+  
+  if ((pressed.has("KeyQ") || tapLeft) && canControl) {
     drone.left_thrust = lerp(drone.left_thrust, 3000, 0.4);
   } else {
     drone.left_thrust = lerp(drone.left_thrust, 0, 0.1);
   }
-  if (pressed.has("KeyP") && canControl) {
+  if ((pressed.has("KeyP") || tapRight) && canControl) {
     drone.right_thrust = lerp(drone.right_thrust, 3000, 0.4);
   } else {
     drone.right_thrust = lerp(drone.right_thrust, 0, 0.1);
@@ -133,7 +145,7 @@ function drawGround(floor_level, ceiling_level) {
   strokeWeight(5);
   fill('white');
   stroke('white');
-  offsetX = width*floor(camera.x/(width));
+  offsetX = 70*10*floor(camera.x/(70*10));
   line(offsetX-nativeWidth*2, nativeHeight-floor_level, offsetX+nativeWidth*2, nativeHeight-floor_level);
   for (let i=0; i<nativeWidth/10; i++) {
     quad(offsetX-nativeWidth*2+70*i, nativeHeight-floor_level,
