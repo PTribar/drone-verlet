@@ -113,7 +113,10 @@ function keyPressed(evt) {
       localEntries[localEntries.length-1].name = nameInput.join("");
     }
   }
-  else if (key == " " || key == "r") {
+  else if (key == "Enter" && canSubmit) {
+    submitScore();
+  }
+  else if (key == " " || key == "r" || key == "Enter") {
     retry();
   }
   else if (key == "Escape") {
