@@ -1,3 +1,7 @@
+let menuButton;
+
+// game_scene code ----------------------------------
+
 let PE; // Physics Environment
 let SH; // Scene Handler
 var pressed = new Set();
@@ -10,7 +14,7 @@ let retryScreen;
 let submitButtonActive = false;
 let prevScore;
 let camera;
-let database;
+
 let textSizeAnim;
 let canControl;
 let isGrounded;
@@ -20,6 +24,11 @@ let canSubmit;
 let isTyping;
 let prevInput = [];
 let nameInput = [];
+// --------------
+
+
+let database;
+
 
 let font;
 let scores;
@@ -37,37 +46,40 @@ function preload() {
 function setup() {
   createCanvas(nativeWidth*resolution, nativeHeight*resolution);
   textFont(font);
+  
   PE = new PhysicsEnvironment();
   drone = new Drone(0, nativeHeight*0.9);
-  score = 0;
-  camera = createVector(0, 0);
-  retryScreen = new RetryScreen();
-  textSizeAnim = 250;
-  canControl = true;
-  isGrounded = false;
-  groundedTimer = 0;
-  isTyping = false;
-  canSubmit = false;
+  title_scene_init();
+  options_scene_init();
+  game_scene_init();
+  
+  menuButton = new Button({
+    content: '<',
+    contentSize: 30,
+    posX: 40,
+    posY: 40,
+    sizeX: 60,
+    sizeY: 60,
+    align: CORNER,
+    contentColor: color('black'),
+    fillColor: color('white'),
+    borderColor: color('black'),
+    borderWeight: 2,
+    onPressed: function () {
+      SH.curr_scene='title_scene'
+    },
+  });
+  
   
   // frameRate(10);
   
   SH = new SceneHandler();
+  SH.scenes.push(title_scene);
+  SH.scenes.push(options_scene);
   SH.scenes.push(game_scene);
   
-  const firebaseConfig = {
-    apiKey: "AIzaSyC2-7m8bc9VtmWwg350XQ8gUpgALp5bJgI",
-    authDomain: "drone-verlet.firebaseapp.com",
-    databaseURL: "https://drone-verlet-default-rtdb.firebaseio.com",
-    projectId: "drone-verlet",
-    storageBucket: "drone-verlet.appspot.com",
-    messagingSenderId: "1009179183741",
-    appId: "1:1009179183741:web:86642259fabc13f15abf14",
-    measurementId: "G-NYHGNV8V0L"
-  };
-  firebase.initializeApp(firebaseConfig);
+  database_init();
   
-  database = new Database(firebase.database());
-  database.getScores();
 }
 function mousePressed() {
   // print(mouseX, mouseY);
@@ -104,6 +116,10 @@ function keyPressed(evt) {
   else if (key == " " || key == "r") {
     retry();
   }
+  else if (key == "Escape") {
+    SH.curr_scene = 'title_scene';
+  }
+  
 }
 
 function keyReleased(evt) {
@@ -112,11 +128,13 @@ function keyReleased(evt) {
 
 function retry() {
   drone = new Drone(0, nativeHeight*0.8);
+  demoDrone = new Drone(nativeWidth*0.5, nativeHeight*0.9);
+  // staticDrone = new Drone(0, 0);
   retryScreen.active = false;
   canControl = true;
 }
 
-function droneControl() {
+function droneControl(drone) {
   let tapLeft = false;
   let tapRight = false;
   
@@ -128,20 +146,24 @@ function droneControl() {
     }
   })
   
+  const leftControl = !revControlButton.options.value?"KeyQ":"KeyP";
+  const rightControl = !revControlButton.options.value?"KeyP":"KeyQ";
   
-  if ((pressed.has("KeyQ") || tapLeft) && canControl) {
-    drone.left_thrust = lerp(drone.left_thrust, 3000, 0.4);
+  
+  if ((pressed.has(leftControl) || tapLeft) && canControl) {
+    drone.left_thrust = lerp(drone.left_thrust, maxThrustSlider.value, thrustSensSlider.value);
   } else {
-    drone.left_thrust = lerp(drone.left_thrust, 0, 0.1);
+    drone.left_thrust = lerp(drone.left_thrust, autoThrustSlider.value, releaseSensSlider.value);
   }
-  if ((pressed.has("KeyP") || tapRight) && canControl) {
-    drone.right_thrust = lerp(drone.right_thrust, 3000, 0.4);
+  if ((pressed.has(rightControl) || tapRight) && canControl) {
+    drone.right_thrust = lerp(drone.right_thrust, maxThrustSlider.value, thrustSensSlider.value);
   } else {
-    drone.right_thrust = lerp(drone.right_thrust, 0, 0.1);
+    drone.right_thrust = lerp(drone.right_thrust, autoThrustSlider.value, releaseSensSlider.value);
   }
 }
 
 function drawGround(floor_level, ceiling_level) {
+  push();
   strokeWeight(5);
   fill('white');
   stroke('white');
@@ -163,7 +185,7 @@ function drawGround(floor_level, ceiling_level) {
          offsetX-nativeWidth*2+70*i-20, ceiling_level-20);
   }
   line(offsetX-nativeWidth*2, ceiling_level-20, offsetX+nativeWidth*2, ceiling_level-20);
-  
+  pop();
 }
 
 function draw() {
@@ -180,7 +202,7 @@ function draw() {
   background(0);
   scale(resolution);
   
-  SH.render('game_scene');
+  SH.render(SH.curr_scene);
 }
 
 
@@ -344,6 +366,8 @@ class AnimationValue {
       let easeFunc = 1 + c3 * pow(t - 1, 3) + c1 * pow(t - 1, 2);
 
       this.val = lerp(this.startVal, this.endVal, easeFunc);
+    } else if (this.easing === 'sin-in-out-return') {
+      this.val = lerp(this.startVal, this.endVal, (sin((t-1/4)*2*PI)+1)/2);
     } else {
       this.val = lerp(this.startVal, this.endVal, t);
     }

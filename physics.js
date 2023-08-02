@@ -70,24 +70,26 @@ class PhysicsPoint {
     this.visible = visible;
   }
   update(dt) {
-    if (!this.pinned) {
-      let vel_x = (this.x - this.old_x);
-      let vel_y = (this.y - this.old_y) * this.drag_index;
+    if (this.pinned) return;
+    
+    let vel_x = (this.x - this.old_x);
+    let vel_y = (this.y - this.old_y) * this.drag_index;
 
-      // The current position becomes the old one
-      this.old_x = this.x;
-      this.old_y = this.y;
+    // The current position becomes the old one
+    this.old_x = this.x;
+    this.old_y = this.y;
 
-      // Compute the acceleration using a=F/m
-      let acc_x = this.force_x / this.mass;
-      let acc_y = this.force_y / this.mass;
+    // Compute the acceleration using a=F/m
+    let acc_x = this.force_x / this.mass;
+    let acc_y = this.force_y / this.mass;
 
-      // Estimate the new position using Verlet integration
-      this.x += vel_x + acc_x * dt*dt;
-      this.y += vel_y + acc_y * dt*dt;
-    }
+    // Estimate the new position using Verlet integration
+    this.x += vel_x + acc_x * dt*dt;
+    this.y += vel_y + acc_y * dt*dt;
   }
   constrain() {
+    if (this.pinned) return;
+    
     let vel_x = (this.x - this.old_x);
     let vel_y = (this.y - this.old_y);
     // if (this.x < 0) {

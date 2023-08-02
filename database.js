@@ -1,3 +1,22 @@
+function database_init() {
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyC2-7m8bc9VtmWwg350XQ8gUpgALp5bJgI",
+    authDomain: "drone-verlet.firebaseapp.com",
+    databaseURL: "https://drone-verlet-default-rtdb.firebaseio.com",
+    projectId: "drone-verlet",
+    storageBucket: "drone-verlet.appspot.com",
+    messagingSenderId: "1009179183741",
+    appId: "1:1009179183741:web:86642259fabc13f15abf14",
+    measurementId: "G-NYHGNV8V0L"
+  };
+  firebase.initializeApp(firebaseConfig);
+  
+  database = new Database(firebase.database());
+  database.getScores();
+}
+
+
 class Database {
   constructor(database) {
     this.database = database;

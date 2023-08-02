@@ -1,5 +1,5 @@
 class Drone {
-  constructor(x, y) {
+  constructor(x, y, isStatic=false) {
     this.x = x;
     this.y = y;
     this.body_size = 100;
@@ -12,6 +12,7 @@ class Drone {
     this.right_force = createVector(0, 0);
     this.right_rotation = 0;
     this.maxThrust = 4000;
+    this.static = isStatic;
     
     this.center = PE.createPoint(this.x, this.y);
     
@@ -120,6 +121,8 @@ class Drone {
     
     this.drone_points = this.body_points.concat(this.left_points).
                   concat(this.right_points).concat(this.leg_points);
+    
+    this.drone_points.forEach(pt => {pt.pinned = this.static});
   }
   
   update(debug = false) {
@@ -164,7 +167,7 @@ class Drone {
   }
   
   render() {
-    
+    push();
     strokeWeight(5);
     stroke('white');
     strokeCap(SQUARE);
@@ -270,6 +273,8 @@ class Drone {
     vertex(rightPropRatio(0.5+rightPropSpan/2 * sin(this.right_rotation)).x+rightPropDir.x*15,
            rightPropRatio(0.5+rightPropSpan/2 * sin(this.right_rotation)).y+rightPropDir.y*15);
     endShape();
+    
+    pop();
     
   }
   
