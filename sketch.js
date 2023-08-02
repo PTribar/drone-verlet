@@ -121,6 +121,7 @@ function keyPressed(evt) {
   }
   else if (key == "Escape") {
     SH.curr_scene = 'title_scene';
+    camera.x = 0;
   }
   
 }
