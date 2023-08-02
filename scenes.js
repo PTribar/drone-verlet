@@ -186,6 +186,7 @@ function options_scene() {
   text(round(autoThrustSlider.value,0), nativeWidth*0.9, nativeHeight*0.7);
   
   let dt = 1/60;
+  camera.x = 0;
   droneControl(demoDrone);
   drawGround(demoDrone.body_points[0].floor_level, demoDrone.body_points[0].ceiling_level);
   // drone controls
