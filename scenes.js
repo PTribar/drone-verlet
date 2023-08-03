@@ -80,7 +80,7 @@ function title_scene() {
   fill(secondaryColor);
   textSize(32);
   textAlign(RIGHT);
-  text('v1.0', nativeWidth, nativeHeight-16);
+  text('v1.1', nativeWidth-16, nativeHeight-16);
   textSize(96);
   textAlign(CENTER);
   text('DRONE VERLET', nativeWidth/2, nativeHeight*0.45);
