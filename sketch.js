@@ -1,4 +1,9 @@
 let menuButton;
+let buttonArray = [];
+
+let primaryColor;
+let secondaryColor;
+let accentColor;
 // --------------
 
 
@@ -20,6 +25,9 @@ function preload() {
 function setup() {
   createCanvas(nativeWidth*resolution, nativeHeight*resolution);
   textFont(font);
+  primaryColor = themeColors[0].primary;
+  secondaryColor = themeColors[0].secondary;
+  accentColor = themeColors[0].accent;
   
   PE = new PhysicsEnvironment();
   drone = new Drone(0, nativeHeight*0.9);
@@ -35,14 +43,10 @@ function setup() {
     sizeX: 60,
     sizeY: 60,
     align: CORNER,
-    contentColor: color('black'),
-    fillColor: color('white'),
-    borderColor: color('black'),
     onPressed: function () {
       SH.curr_scene='title_scene'
     },
   });
-  
   
   // frameRate(10);
   
@@ -53,7 +57,9 @@ function setup() {
   
   database_init();
   
+  updateTheme();
 }
+
 function mousePressed() {
   // print(mouseX, mouseY);
 }
@@ -72,20 +78,31 @@ function keyPressed(evt) {
   if (isTyping) {
     if (key == "Enter") {
       isTyping = false;
-      retryScreen.submitButton.isActive = true;
+      if (nameInput.length!=0) {
+        if (retryScreen.submitButton.isActive) {
+          retryScreen.submitButton.onPressed();
+        } else {
+          retryScreen.submitButton.isActive = true;
+        }
+      } else {
+        retry();
+      }
     } else if (key == "Backspace") {
       nameInput.pop();
     } else if (key.length == 1 && key != " ") {
+      retryScreen.submitButton.isActive = true;
       if (nameInput.length < charLimit) {
         nameInput.push(key); 
       } else {
         nameInput[charLimit-1] = key;
       }
+    } else if (key == "Escape" || key == " ") {
+      retry();
     }
     if (isTyping) {
       localEntries[localEntries.length-1].name = nameInput.join("");
     }
-  } else if (key == "Enter" && retryScreen.submitButton.isActive) {
+  } else if (key == "Enter" && retryScreen.submitButton.isActive && nameInput != '') {
     retryScreen.submitButton.onPressed();
   } else if (key == " " || key == "r" || key == "Enter") {
     retry();
@@ -102,6 +119,8 @@ function keyReleased(evt) {
 function retry() {
   drone = new Drone(0, nativeHeight*0.8);
   demoDrone = new Drone(nativeWidth*0.5, nativeHeight*0.9);
+  updateTheme();
+  
   retryScreen.active = false;
   canControl = true;
 }
@@ -137,8 +156,8 @@ function droneControl(drone) {
 function drawGround(floor_level, ceiling_level) {
   push();
   strokeWeight(5);
-  fill('white');
-  stroke('white');
+  fill(secondaryColor);
+  stroke(secondaryColor);
   offsetX = 70*10*floor(camera.x/(70*10));
   line(offsetX-nativeWidth*2, nativeHeight-floor_level, offsetX+nativeWidth*2, nativeHeight-floor_level);
   for (let i=0; i<nativeWidth/10; i++) {
@@ -171,7 +190,7 @@ function draw() {
     
     resizeCanvas(nativeWidth*resolution, nativeHeight*resolution);
   }
-  background(0);
+  background(primaryColor);
   scale(resolution);
   
   SH.render(SH.curr_scene);
@@ -241,8 +260,8 @@ class RetryScreen {
     
     rectMode(CENTER);
     strokeWeight(5);
-    stroke('white');
-    fill('black');
+    stroke(secondaryColor);
+    fill(primaryColor);
     rect(this.x, this.y, this.sizeX, this.sizeY);
     this.showResults();
   }
@@ -256,7 +275,7 @@ class RetryScreen {
       })
     }
     noStroke();
-    fill('white');
+    fill(secondaryColor);
     textSize(this.fontSizeAnim.val);
     text(finalScore, this.x, this.y-210);
     

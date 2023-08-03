@@ -1,3 +1,25 @@
+/* TODO
+
+:::QOL:::
+1. submit button optimization
+ > be active once typing started
+ > submitted notification
+2. follow drone in options 
+3. restart without typing using space/r
+
+:::features:::
+1. view highscores in menu
+2. add achievements
+3. drone customize
+4. wacky mode
+5. weekly leaderboards
+
+:::design:::
+1. background (optional)
+2. color selector
+
+*/
+
 class SceneHandler {
   constructor(curr_scene=0) {
     this.curr_scene = curr_scene;
@@ -55,7 +77,7 @@ function title_scene_init() {
 }
 
 function title_scene() {
-  fill(255);
+  fill(secondaryColor);
   textSize(32);
   textAlign(RIGHT);
   text('v1.0', nativeWidth, nativeHeight-16);
@@ -82,21 +104,72 @@ let thrustSensSlider;
 let releaseSensSlider;
 let maxThrustSlider;
 let autoThrustSlider;
+let themeSelector = [];
+let themeColors = [
+  {primary: 'black', secondary: 'white', accent: 'white'},
+  {primary: 'navy', secondary: 'yellow', accent: 'cyan'},
+  {primary: 'purple', secondary: 'pink', accent: 'greenyellow'},
+  {primary: 'sienna', secondary: 'yellow', accent: 'gold'},
+  {primary: 'darkslateblue', secondary: 'hotpink', accent: 'yellow'},
+];
 let demoDrone;
+let optionGap;
+
+function updateTheme() {
+  buttonArray.forEach(button => {
+    button.fillColor = secondaryColor;
+    button.hoverFillColor = setBrightness(secondaryColor, 70);
+    button.pressFillColor = primaryColor;
+    button.inactiveFillColor = button.hoverFillColor;
+    
+    button.borderColor = primaryColor;
+    button.hoverBorderColor = setBrightness(primaryColor, brightness(primaryColor)*0.5);
+    button.pressBorderColor = secondaryColor;
+    button.inactiveBorderColor = button.hoverBorderColor;
+    
+    button.contentColor = primaryColor;
+    button.hoverContentColor = setBrightness(primaryColor, brightness(primaryColor)*0.5);
+    button.pressContentColor = secondaryColor;
+    button.inactiveContentColor = button.hoverContentColor;
+    
+  });
+  for (let i=0; i<themeSelector.length; i++) {
+    themeSelector[i].fillColor = themeColors[i].primary;
+    themeSelector[i].borderColor = themeColors[i].secondary;
+    
+    themeSelector[i].hoverFillColor = setBrightness(themeColors[i].secondary, 70);
+    themeSelector[i].pressFillColor = primaryColor;
+    
+    themeSelector[i].hoverBorderColor = setBrightness(themeColors[i].primary, brightness(themeColors[i].primary)*0.5);
+    themeSelector[i].pressBorderColor = themeColors[i].secondary;
+    
+    themeSelector[i].hoverContentColor = setBrightness(themeColors[i].primary, brightness(themeColors[i].primary)*0.5);
+    themeSelector[i].pressContentColor = themeColors[i].secondary;
+    
+  }
+  
+  drone.fillColor = primaryColor;
+  drone.strokeColor = accentColor;
+  
+  demoDrone.fillColor = primaryColor;
+  demoDrone.strokeColor = accentColor;
+  
+  staticDrone.fillColor = primaryColor;
+  staticDrone.strokeColor = accentColor;
+  
+}
 
 function options_scene_init() {
+  optionGap = 0.9;
+  
   revControlButton = new Button({
     content: '',
     contentSize: 30,
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.3 - 20,
+    posY: nativeHeight*0.3*optionGap - 20,
     sizeX: 40,
     sizeY: 40,
     align: CENTER,
-    contentColor: color('black'),
-    fillColor: color('white'),
-    borderColor: color('black'),
-    borderWeight: 2,
     onPressed: function () {
       if (this.content=='') {
         this.content='X'; 
@@ -112,7 +185,7 @@ function options_scene_init() {
   
   thrustSensSlider = new Slider({
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.4-20,
+    posY: nativeHeight*0.4*optionGap-20,
     length: nativeWidth*0.3,
     handle: revControlButton.clone(),
     minValue: 0.1, 
@@ -124,7 +197,7 @@ function options_scene_init() {
   
   releaseSensSlider = new Slider({
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.5-20,
+    posY: nativeHeight*0.5*optionGap-20,
     length: nativeWidth*0.3,
     handle: revControlButton.clone(),
     minValue: 0.01,
@@ -136,7 +209,7 @@ function options_scene_init() {
   
   maxThrustSlider = new Slider({
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.6-20,
+    posY: nativeHeight*0.6*optionGap-20,
     length: nativeWidth*0.3,
     handle: revControlButton.clone(),
     minValue: 3000,
@@ -147,7 +220,7 @@ function options_scene_init() {
   
   autoThrustSlider = new Slider({
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.7-20,
+    posY: nativeHeight*0.7*optionGap-20,
     length: nativeWidth*0.3,
     handle: revControlButton.clone(),
     minValue: 0,
@@ -156,37 +229,57 @@ function options_scene_init() {
   })
   autoThrustSlider.handle.sizeX *= 0.2;
   
+  for (let i=0; i<themeColors.length; i++) {
+    themeSelector.push(new Button({
+      posX: nativeWidth*0.55+80*i,
+      posY: nativeHeight*0.8*optionGap-20,
+      sizeX: 60,
+      fillColor: themeColors[i].primary,
+      borderColor: themeColors[i].secondary,
+      align: CENTER,
+      borderWeight: 8,
+      onPressed: function () {
+        primaryColor = themeColors[i].primary;
+        secondaryColor = themeColors[i].secondary;
+        accentColor = themeColors[i].accent;
+        updateTheme();
+      },
+    }))
+  }
+  
   demoDrone = new Drone(nativeWidth/2, nativeHeight*0.9);
 }
 
 function options_scene() {
-  fill(255);
+  fill(secondaryColor);
   textSize(48);
   textAlign(CENTER);
   text('OPTIONS', nativeWidth/2, nativeHeight*0.1);
   textSize(32);
   textAlign(LEFT);
-  text('Reverse Controls', 50, nativeHeight*0.3);
-  text('Thrust Sensitivity', 50, nativeHeight*0.4);
-  text('Release Sensitivity', 50, nativeHeight*0.5);
-  text('Thrust Power', 50, nativeHeight*0.6);
-  text('Auto Thrust Power', 50, nativeHeight*0.7);
+  text('Reverse Controls', 50, nativeHeight*0.3*optionGap);
+  text('Thrust Sensitivity', 50, nativeHeight*0.4*optionGap);
+  text('Release Sensitivity', 50, nativeHeight*0.5*optionGap);
+  text('Thrust Power', 50, nativeHeight*0.6*optionGap);
+  text('Auto Thrust Power', 50, nativeHeight*0.7*optionGap);
+  text('Theme', 50, nativeHeight*0.8*optionGap);
   
   revControlButton.render();
   thrustSensSlider.render();
   releaseSensSlider.render();
   maxThrustSlider.render();
   autoThrustSlider.render();
+  themeSelector.forEach(theme => {theme.render()});
   
   if (!revControlButton.options.value) {
-    text('Q: Left, P: Right', nativeWidth*0.6, nativeHeight*0.3);
+    text('Q: Left, P: Right', nativeWidth*0.6, nativeHeight*0.3*optionGap);
   } else { 
-    text('P: Left, Q: Right', nativeWidth*0.6, nativeHeight*0.3);
+    text('P: Left, Q: Right', nativeWidth*0.6, nativeHeight*0.3*optionGap);
   }
-  text(nf(thrustSensSlider.value,0,1), nativeWidth*0.9, nativeHeight*0.4);
-  text(nf(releaseSensSlider.value,0,2), nativeWidth*0.9, nativeHeight*0.5);
-  text(round(maxThrustSlider.value,0), nativeWidth*0.9, nativeHeight*0.6);
-  text(round(autoThrustSlider.value,0), nativeWidth*0.9, nativeHeight*0.7);
+  text(nf(thrustSensSlider.value,0,1), nativeWidth*0.9, nativeHeight*0.4*optionGap);
+  text(nf(releaseSensSlider.value,0,2), nativeWidth*0.9, nativeHeight*0.5*optionGap);
+  text(round(maxThrustSlider.value,0), nativeWidth*0.9, nativeHeight*0.6*optionGap);
+  text(round(autoThrustSlider.value,0), nativeWidth*0.9, nativeHeight*0.7*optionGap);
   
   let dt = 1/60;
   camera.x = 0;
@@ -251,7 +344,7 @@ function game_scene() {
   }
   textSizeAnim = lerp(textSizeAnim, 150, 0.1);
   textSize(textSizeAnim);
-  fill('white');
+  fill(secondaryColor);
   text(int(score), nativeWidth/2, nativeHeight/3);
   
   // draw ground and follow drone

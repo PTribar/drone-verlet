@@ -7,3 +7,13 @@ function distance(p0, p1) {
 function clamp(val, minVal, maxVal) {
   return min(maxVal, max(minVal, val));
 }
+  
+function setBrightness(col, targetBright) {
+  let currBright = brightness(col);
+  let ratio = targetBright/currBright;
+  
+  if (ratio)
+    return color(red(col)*ratio, green(col)*ratio, blue(col)*ratio);
+  else
+    return color(0);
+}

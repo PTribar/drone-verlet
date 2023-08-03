@@ -13,6 +13,8 @@ class Drone {
     this.right_rotation = 0;
     this.maxThrust = 4000;
     this.static = isStatic;
+    this.strokeColor = 'white';
+    this.fillColor = 'black';
     
     this.center = PE.createPoint(this.x, this.y);
     
@@ -169,7 +171,7 @@ class Drone {
   render() {
     push();
     strokeWeight(5);
-    stroke('white');
+    stroke(this.strokeColor);
     strokeCap(SQUARE);
     noFill();
     // left frame
@@ -199,7 +201,7 @@ class Drone {
     
     
     // body
-    fill('black');
+    fill(this.fillColor);
     strokeWeight(5);
     beginShape();
     vertex(this.body_points[0].x, this.body_points[0].y);
