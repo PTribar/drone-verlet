@@ -76,11 +76,6 @@ function keyPressed(evt) {
   prevInput = [...nameInput];
   
   if (isTyping) {
-    if (nameInput.length != 0) {
-      retryScreen.submitButton.isActive = true;
-    } else {
-      retryScreen.submitButton.isActive = false;
-    }
     if (key == "Enter") {
       isTyping = false;
       if (nameInput.length!=0) {
@@ -105,6 +100,11 @@ function keyPressed(evt) {
     }
     if (isTyping) {
       localEntries[localEntries.length-1].name = nameInput.join("");
+    }
+    if (nameInput.length != 0) {
+      retryScreen.submitButton.isActive = true;
+    } else {
+      retryScreen.submitButton.isActive = false;
     }
   } else if (key == "Enter" && retryScreen.submitButton.isActive && nameInput != '') {
     retryScreen.submitButton.onPressed();
