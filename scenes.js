@@ -135,16 +135,15 @@ function updateTheme() {
   });
   for (let i=0; i<themeSelector.length; i++) {
     themeSelector[i].fillColor = themeColors[i].primary;
+    themeSelector[i].hoverFillColor = setBrightness(themeColors[i].primary, brightness(themeColors[i].primary)*0.5);
+    themeSelector[i].pressFillColor = themeColors[i].secondary;
+    
     themeSelector[i].borderColor = themeColors[i].secondary;
-    
-    themeSelector[i].hoverFillColor = setBrightness(themeColors[i].secondary, 70);
-    themeSelector[i].pressFillColor = primaryColor;
-    
-    themeSelector[i].hoverBorderColor = setBrightness(themeColors[i].primary, brightness(themeColors[i].primary)*0.5);
-    themeSelector[i].pressBorderColor = themeColors[i].secondary;
+    themeSelector[i].hoverBorderColor = setBrightness(themeColors[i].secondary, brightness(themeColors[i].secondary)*0.5);
+    themeSelector[i].pressBorderColor = themeColors[i].primary;
     
     themeSelector[i].hoverContentColor = setBrightness(themeColors[i].primary, brightness(themeColors[i].primary)*0.5);
-    themeSelector[i].pressContentColor = themeColors[i].secondary;
+    themeSelector[i].pressContentColor = themeColors[i].primary;
     
   }
   
