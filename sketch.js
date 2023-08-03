@@ -76,6 +76,11 @@ function keyPressed(evt) {
   prevInput = [...nameInput];
   
   if (isTyping) {
+    if (nameInput.length != 0) {
+      retryScreen.submitButton.isActive = true;
+    } else {
+      retryScreen.submitButton.isActive = false;
+    }
     if (key == "Enter") {
       isTyping = false;
       if (nameInput.length!=0) {
@@ -90,7 +95,6 @@ function keyPressed(evt) {
     } else if (key == "Backspace") {
       nameInput.pop();
     } else if (key.length == 1 && key != " ") {
-      retryScreen.submitButton.isActive = true;
       if (nameInput.length < charLimit) {
         nameInput.push(key); 
       } else {
@@ -122,6 +126,7 @@ function retry() {
   updateTheme();
   
   retryScreen.active = false;
+  retryScreen.submitButton.isActive = false;
   canControl = true;
 }
 
