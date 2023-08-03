@@ -15,17 +15,36 @@ class Button {
     
     this.visible = options.visible!=null? options.visible : true;
     this.rounded = options.rounded || [0,0,0,0];
+    
     this.contentColor = options.contentColor || color('black');
     this.hoverContentColor = options.hoverContentColor || color('black');
     this.pressContentColor = options.pressContentColor || color('white');
+    this.inactiveContentColor = options.inactiveContentColor || color(50);
+
+    this.inactiveFillColor = options.inactiveFillColor || color('grey');
+
+    this.inactiveBorderColor = options.inactiveBorderColor || color(50);
+    
     this.fillColor = options.fillColor || color('white');
     this.hoverFillColor = options.hoverFillColor || color('grey');
     this.pressFillColor = options.pressFillColor || color('black');
+    this.inactiveContentColor = options.inactiveContentColor || color(50);
+
+    this.inactiveFillColor = options.inactiveFillColor || color('grey');
+
+    this.inactiveBorderColor = options.inactiveBorderColor || color(50);
+    
     this.borderColor = options.borderColor || color('black');
     this.hoverBorderColor = options.hoverBorderColor || color('black');
     this.pressBorderColor = options.pressBorderColor || color('white');
-    this.borderWeight = options.borderWeight || 2;
+    this.borderWeight = options.borderWeight || 4;
+    this.inactiveContentColor = options.inactiveContentColor || color(50);
+
+    this.inactiveFillColor = options.inactiveFillColor || color('grey');
+
+    this.inactiveBorderColor = options.inactiveBorderColor || color(50);
     
+    this.isActive = options.isActive!=null? options.isActive : true;
     this.isHovered = false;
     this.isFirstPressed = false;
     this.isPressed = false;
@@ -34,12 +53,15 @@ class Button {
   
   render() {
     this.checkMouse();
-    
+
     if (!this.visible) return;
     
     push();
     strokeWeight(this.borderWeight);
-    if (this.isPressed) {
+    if (!this.isActive) {
+      stroke(this.inactiveBorderColor);
+      fill(this.inactiveFillColor);
+    } else if (this.isPressed) {
       stroke(this.pressBorderColor);
       fill(this.pressFillColor);
     } else if (this.isHovered) {
@@ -56,7 +78,9 @@ class Button {
     
     // content and its colors
     noStroke();
-    if (this.isPressed) {
+    if (!this.isActive) {
+      fill(this.inactiveContentColor);
+    } else if (this.isPressed) {
       fill(this.pressContentColor);
     } else if (this.isHovered) {
       fill(this.hoverContentColor);
@@ -81,6 +105,8 @@ class Button {
     let relativeMouseX = mouseX/resolution;
     let relativeMouseY = mouseY/resolution;
     
+    if (!this.isActive) return;
+
     if (this.align == CENTER) {
       xAxisAligned = this.posX-this.sizeX/2<=relativeMouseX && relativeMouseX<=this.posX+this.sizeX/2;
       yAxisAligned = this.posY-this.sizeY/2<=relativeMouseY && relativeMouseY<=this.posY+this.sizeY/2;

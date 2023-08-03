@@ -56,6 +56,9 @@ function title_scene_init() {
 
 function title_scene() {
   fill(255);
+  textSize(32);
+  textAlign(RIGHT);
+  text('v1.0', nativeWidth, nativeHeight-16);
   textSize(96);
   textAlign(CENTER);
   text('DRONE VERLET', nativeWidth/2, nativeHeight*0.45);
@@ -199,6 +202,29 @@ function options_scene() {
 
 
 // game_scene code ----------------------------------
+
+let PE; // Physics Environment
+let SH; // Scene Handler
+var pressed = new Set();
+let drone;
+let score;
+let localEntries = [];
+let savedEntries = [];
+let allEntries = [];
+let retryScreen;
+let prevScore;
+let camera;
+
+let textSizeAnim;
+let canControl;
+let isGrounded;
+let groundedTimer;
+
+let isTyping;
+let prevInput = [];
+let nameInput = [];
+
+// game_scene code ----------------------------------
 function game_scene_init() {
   
   score = 0;
@@ -209,7 +235,6 @@ function game_scene_init() {
   isGrounded = false;
   groundedTimer = 0;
   isTyping = false;
-  canSubmit = false;
 }
 
 function game_scene() {
@@ -266,7 +291,6 @@ function game_scene() {
       prevInput = [];
       nameInput = [];
       retryScreen.saveResult();
-      submitButtonActive = true;
     }
     canControl = false;
   }

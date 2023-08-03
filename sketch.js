@@ -1,34 +1,8 @@
 let menuButton;
-
-// game_scene code ----------------------------------
-
-let PE; // Physics Environment
-let SH; // Scene Handler
-var pressed = new Set();
-let drone;
-let score;
-let localEntries = [];
-let savedEntries = [];
-let allEntries = [];
-let retryScreen;
-let submitButtonActive = false;
-let prevScore;
-let camera;
-
-let textSizeAnim;
-let canControl;
-let isGrounded;
-let groundedTimer;
-
-let canSubmit;
-let isTyping;
-let prevInput = [];
-let nameInput = [];
 // --------------
 
 
 let database;
-
 
 let font;
 let scores;
@@ -64,7 +38,6 @@ function setup() {
     contentColor: color('black'),
     fillColor: color('white'),
     borderColor: color('black'),
-    borderWeight: 2,
     onPressed: function () {
       SH.curr_scene='title_scene'
     },
@@ -99,10 +72,10 @@ function keyPressed(evt) {
   if (isTyping) {
     if (key == "Enter") {
       isTyping = false;
-      canSubmit = true;
+      retryScreen.submitButton.isActive = true;
     } else if (key == "Backspace") {
       nameInput.pop();
-    } else if (key.length == 1) {
+    } else if (key.length == 1 && key != " ") {
       if (nameInput.length < charLimit) {
         nameInput.push(key); 
       } else {
@@ -112,14 +85,11 @@ function keyPressed(evt) {
     if (isTyping) {
       localEntries[localEntries.length-1].name = nameInput.join("");
     }
-  }
-  else if (key == "Enter" && canSubmit && nameInput!='') {
-    submitScore();
-  }
-  else if (key == " " || key == "r" || key == "Enter") {
+  } else if (key == "Enter" && retryScreen.submitButton.isActive) {
+    retryScreen.submitButton.onPressed();
+  } else if (key == " " || key == "r" || key == "Enter") {
     retry();
-  }
-  else if (key == "Escape") {
+  } else if (key == "Escape") {
     SH.curr_scene = 'title_scene';
   }
   
@@ -132,7 +102,6 @@ function keyReleased(evt) {
 function retry() {
   drone = new Drone(0, nativeHeight*0.8);
   demoDrone = new Drone(nativeWidth*0.5, nativeHeight*0.9);
-  // staticDrone = new Drone(0, 0);
   retryScreen.active = false;
   canControl = true;
 }
@@ -219,6 +188,7 @@ class RetryScreen {
     this.inactiveHeight = nativeHeight+this.sizeY;
     this.activeHeight = nativeHeight/2;
     this.active = false;
+
     
     
     this.fontSizeAnim = new AnimationValue(50, 0, 130, 'ease-out-back', 20);
@@ -226,16 +196,21 @@ class RetryScreen {
     for (let i=0; i<10; i++) {
       this.highscoreSizeAnim.push(new AnimationValue(30, 0, 30, 'ease-out-back', 30+4*i));
     }
+    this.submitButton = new Button({
+      content: 'SUBMIT',
+      contentSize: 24,
+      align: CENTER,
+      isActive: false,
+      posX: this.x,
+      posY: this.y,
+      sizeX: this.sizeX/3,
+      sizeY: 60,
+      onPressed: function () {
+        submitScore();
+        this.isActive=false;
+      },
+    })
     
-    this.submitButtonTimer = new AnimationValue(40, 100, 0);
-    this.submitButton = createButton('Submit');
-    this.submitButton.position(this.x-this.sizeX/5, this.activenativeHeight+this.sizeY/2-120);
-    this.submitButton.size(this.sizeX/2.5,70);
-    this.submitButton.hide();
-    this.submitButton.mousePressed(submitScore);
-    this.submitButton.style("border", "4px solid white");
-    this.submitButton.style("padding", "0px");
-    this.submitButton.style("font-size", "24px");
   }
   
   resetAnim() {
@@ -243,7 +218,6 @@ class RetryScreen {
     this.highscoreSizeAnim.forEach(anim => {
       anim.reset();
     })
-    this.submitButtonTimer.reset();
   }
   
   render() {
@@ -256,25 +230,13 @@ class RetryScreen {
     let dynamicFontSize = 24*resolution+"px";
     let dynamicBorderSize = 4*resolution+"px";
     
-    this.submitButton.style("border",  dynamicBorderSize+" solid white");
-    this.submitButton.style("font-size", dynamicFontSize);
-    this.submitButton.position(dynamicX-dynamicSizeX/5, dynamicSizeY*1.15-dynamicSizeY*0.06/2);
-    this.submitButton.size(dynamicSizeX/2.5,dynamicSizeY*0.06);
     if (this.active) {
       this.y = lerp(this.y, this.activeHeight, 0.1);
-      this.submitButtonTimer.animate();
     } else { 
       this.y = lerp(this.y, this.inactiveHeight, 0.1);
       this.resetAnim();
-      canSubmit = false;
       prevInput = [];
       nameInput = [];
-    }
-    
-    if (canSubmit) {
-      this.submitButton.show();
-    } else {
-      this.submitButton.hide();
     }
     
     rectMode(CENTER);
@@ -315,6 +277,9 @@ class RetryScreen {
       textAlign(RIGHT)
       text(sortedEntries[i].score, this.x+220, this.y + 40 + 70*i);
     }
+    
+    this.submitButton.render();
+    this.submitButton.posY = this.y+this.sizeY/2-60;
   }
   
   saveResult() {
@@ -340,7 +305,6 @@ function submitScore() {
   database.ref.push(result);    
   
   localEntries.splice(localEntries.length-1, 1);
-  canSubmit = false;
 }
 
 class AnimationValue {
