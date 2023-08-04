@@ -78,13 +78,7 @@ function keyPressed(evt) {
   if (isTyping) {
     if (key == "Enter") {
       isTyping = false;
-      if (nameInput.length!=0) {
-        if (retryScreen.submitButton.isActive) {
-          retryScreen.submitButton.onPressed();
-        } else {
-          retryScreen.submitButton.isActive = true;
-        }
-      } else {
+      if (nameInput.length==0) {
         retry();
       }
     } else if (key == "Backspace") {
