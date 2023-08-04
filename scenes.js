@@ -2,10 +2,12 @@
 
 :::QOL:::
 1. submit button optimization
- > be active once typing started
+ > submit available after typing
  > submitted notification
-2. follow drone in options 
+2. follow drone in options *maybe not*
 3. restart without typing using space/r
+4. default button in options
+5. ground design button
 
 :::features:::
 1. view highscores in menu
@@ -44,6 +46,8 @@ let startButton;
 let optionsButton;
 let staticDrone;
 let droneFloatAnim;
+let viewLogButton;
+let updateLogWindow;
 
 function title_scene_init() {
   startButton = new Button({
@@ -59,6 +63,7 @@ function title_scene_init() {
       retry();
     }
   })
+  
   optionsButton = new Button({
     content: 'OPTIONS',
     contentSize: 32,
@@ -72,6 +77,57 @@ function title_scene_init() {
       retry();
     }
   })
+  
+  viewLogButton = new Button({
+    content: '?',
+    contentSize: 32,
+    align: CENTER,
+    posX: nativeWidth-200,
+    posY: nativeHeight-40,
+    sizeX: 50,
+    sizeY: 50,
+    runningFunction: function () {
+      if (this.isHovered) {
+        updateLogWindow.visible = true;
+      } else {
+        updateLogWindow.visible = false;
+      }
+    }
+  })
+  
+  updateLogWindow = new Window({
+    contents: [
+      {content: 'v1.11 Patch Notes', contentAlign: CENTER, contentSize: 36},
+      {content: '', contentAlign: CENTER, contentSize: 32},
+      {content: '- system changes -', contentAlign: CENTER, contentSize: 32},
+      {content: '', contentAlign: LEFT, contentSize: 12},
+      {content: '1. submit system optimized ', contentAlign: LEFT, contentSize: 24},
+      {content: ' * can submit after typing', contentAlign: LEFT, contentSize: 20},
+      {content: '', contentAlign: LEFT, contentSize: 12},
+      {content: '2. restarting made easier', contentAlign: LEFT, contentSize: 24},
+      {content: ' * can restart without input', contentAlign: LEFT, contentSize: 20},
+      {content: '', contentAlign: CENTER, contentSize: 32},
+      {content: '- features -', contentAlign: CENTER, contentSize: 32},
+      {content: '', contentAlign: LEFT, contentSize: 12},
+      {content: '1. added theme selector', contentAlign: LEFT, contentSize: 24},
+      {content: ' * 6 themes in options', contentAlign: LEFT, contentSize: 20},
+      {content: '2. added update log', contentAlign: LEFT, contentSize: 24},
+    ],
+    contentPosition: TOP,
+    contentSize: 16,
+    contentGap: 16,
+    contentColor: secondaryColor,
+    align: CENTER,
+    visible: false,
+    fillColor: primaryColor,
+    marginX: 50,
+    marginY: 50,
+    posX: nativeWidth/2,
+    posY: nativeHeight/2,
+    sizeX: nativeWidth*0.5,
+    sizeY: nativeHeight*0.9,
+  });
+  
   staticDrone = new Drone(0, 0, true);
   droneFloatAnim = new AnimationValue(200, 0, 70, 'sin-in-out-return', 0, true);
 }
@@ -80,13 +136,14 @@ function title_scene() {
   fill(secondaryColor);
   textSize(32);
   textAlign(RIGHT);
-  text('v1.1', nativeWidth-16, nativeHeight-16);
+  text('v1.11', nativeWidth-16, nativeHeight-16);
   textSize(96);
   textAlign(CENTER);
   text('DRONE VERLET', nativeWidth/2, nativeHeight*0.45);
   startButton.render();
   optionsButton.render();
   droneFloatAnim.animate();
+  
   push();
   translate(nativeWidth/2, nativeHeight*0.23 + droneFloatAnim.val);
   rotate(PI/10);
@@ -94,11 +151,15 @@ function title_scene() {
   staticDrone.right_thrust = 3500;
   staticDrone.render();
   pop();
+  
+  updateLogWindow.render();
+  viewLogButton.render();
 }
 
 
 // options_scene code ----------------------------------
 
+let defaultButton;
 let revControlButton;
 let thrustSensSlider;
 let releaseSensSlider;
@@ -111,6 +172,7 @@ let themeColors = [
   {primary: 'purple', secondary: 'pink', accent: 'greenyellow'},
   {primary: 'sienna', secondary: 'yellow', accent: 'gold'},
   {primary: 'darkslateblue', secondary: 'hotpink', accent: 'yellow'},
+  {primary: 'rgb(251,202,213)', secondary: 'rgb(249,150,173)', accent: 'rgb(200,50,75)'},
 ];
 let demoDrone;
 let optionGap;
@@ -133,6 +195,7 @@ function updateTheme() {
     button.inactiveContentColor = button.hoverContentColor;
     
   });
+  
   for (let i=0; i<themeSelector.length; i++) {
     themeSelector[i].fillColor = themeColors[i].primary;
     themeSelector[i].hoverFillColor = setBrightness(themeColors[i].primary, brightness(themeColors[i].primary)*0.5);
@@ -147,6 +210,10 @@ function updateTheme() {
     
   }
   
+  updateLogWindow.contentColor = secondaryColor;
+  updateLogWindow.borderColor = secondaryColor;
+  updateLogWindow.fillColor = primaryColor;
+  
   drone.fillColor = primaryColor;
   drone.strokeColor = accentColor;
   
@@ -158,8 +225,29 @@ function updateTheme() {
   
 }
 
+function resetValues() {
+  revControlButton.value = false;
+  thrustSensSlider.setValue(0.4);
+  releaseSensSlider.setValue(0.1);
+  maxThrustSlider.setValue(3000);
+  autoThrustSlider.setValue(0);
+  themeSelector[0].onPressed();
+}
+
 function options_scene_init() {
   optionGap = 0.9;
+  
+  defaultButton = new Button({
+    content: 'DEFAULT',
+    contentSize: 25,
+    posX: 50,
+    posY: 200,
+    sizeX: 200,
+    sizeY: 50,
+    onPressed: function () {
+      resetValues();
+    },
+  });
   
   revControlButton = new Button({
     content: '',
@@ -263,6 +351,7 @@ function options_scene() {
   text('Auto Thrust Power', 50, nativeHeight*0.7*optionGap);
   text('Theme', 50, nativeHeight*0.8*optionGap);
   
+  defaultButton.render();
   revControlButton.render();
   thrustSensSlider.render();
   releaseSensSlider.render();

@@ -37,12 +37,14 @@ class Button {
     this.isFirstPressed = false;
     this.isPressed = false;
     this.onPressed = options.onPressed || function () {return};
+    this.runningFunction = options.runningFunction || function () {return};
                                                        
     buttonArray.push(this);
   }
     
   render() {
     this.checkMouse();
+    this.runningFunction();
 
     if (!this.visible) return;
     
@@ -164,6 +166,10 @@ class Slider {
     const ratio = (this.handle.posX-this.posX)/this.length;
     this.value = ratio*(this.maxValue-this.minValue) + this.minValue;
   }
+    
+  setValue(val) {
+    this.handle.posX = this.posX + (val - this.minValue)/(this.maxValue-this.minValue)*this.length;
+  }
   
   update() {
     let relativeMouseX = mouseX/resolution;
@@ -205,3 +211,82 @@ class Slider {
     return new Slider(this.options);
   }
 }
+  
+class Window {
+  constructor(options) {
+    this.options = options;
+    
+    this.contents = options.contents || [];
+    this.contentSize = options.contentSize || 12;
+    this.marginX = options.marginX || 0;
+    this.marginY = options.marginY || 0;
+    this.contentGap = options.contentGap || 0;
+    this.posX = options.posX;
+    this.posY = options.posY;
+    this.sizeX = options.sizeX;
+    this.sizeY = options.sizeY || options.sizeX;
+    this.align = options.align || CORNER;
+    this.contentPosition = options.contentPosition || TOP;
+    this.contentAlign = options.contentAlign || LEFT;
+    
+    this.contentColor = options.contentColor || color('black');
+    this.fillColor = options.fillColor || color('white');
+    this.borderColor = options.borderColor || this.contentColor;
+    this.borderWeight = options.borderWeight || 2;
+    
+    this.visible = options.visible!=null? options.visible : true;
+    this.rounded = options.rounded || [0,0,0,0];
+    this.runningFunction = options.runningFunction || function () {return;};
+  }
+  
+  render() {
+    this.runningFunction();
+    if (!this.visible) return;
+    
+    push();
+    strokeWeight(this.borderWeight);
+    stroke(this.borderColor);
+    fill(this.fillColor);  
+    
+    rectMode(this.align);
+    rect(this.posX, this.posY, this.sizeX, this.sizeY, this.rounded[0], this.rounded[1], this.rounded[2], this.rounded[3]);
+    
+    
+    // content and its colors
+    noStroke();
+    fill(this.contentColor);  
+    
+    let currContentPosY = 0;
+    this.contents.forEach(content => {
+      
+      textAlign(content.contentAlign);
+      textSize(content.contentSize);
+      let contentPositionOffset = 0;
+      let contentAlignOffset = 0;
+
+      if (this.contentPosition == TOP) {
+        contentPositionOffset = content.contentSize;
+      } else if (this.contentPosition == CENTER) {
+        contentPositionOffset = this.sizeY/2+content.contentSize/2-this.marginY;
+      } else if (this.contentPosition == BOTTOM) {
+        contentPositionOffset = this.sizeY;
+      }
+      if (content.contentAlign == CENTER) {
+        contentAlignOffset = this.sizeX/2-this.marginX;
+      } else if (content.contentAlign == RIGHT) {
+        contentAlignOffset = this.sizeX;
+      }
+      if (this.align == CENTER) {
+        contentAlignOffset -= this.sizeX/2;
+        contentPositionOffset -= this.sizeY/2;
+      }
+
+      text(content.content,
+           this.marginX + this.posX+contentAlignOffset,
+           this.marginY + this.posY+contentPositionOffset+currContentPosY);
+      currContentPosY += content.contentSize + this.contentGap;
+    })
+    pop();
+  }
+}
+  

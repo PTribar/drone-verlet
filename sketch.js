@@ -286,7 +286,18 @@ class RetryScreen {
     text(nameInput.join(""), this.x, this.y-140);
     let sortedEntries = [...allEntries];
     sortedEntries.sort((a, b) => b.score - a.score);
-  
+    // stats for nerds
+    // print("# of entries:", sortedEntries.length);
+    // let totalPositive = 0;
+    // sortedEntries.forEach(entry => {
+    //   if (entry.score >= 0) {
+    //     totalPositive++;
+    //   }
+    // })
+    // print("# of positive:", totalPositive);
+    // print("# of negative:", sortedEntries.length-totalPositive);
+    // sortedEntries.forEach(entry => {print(entry.name, entry.score)})
+    
     
     for (let i=0; i<min(sortedEntries.length, 5); i++) {
       textAlign(LEFT)
