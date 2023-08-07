@@ -16,8 +16,7 @@ class Drone {
     this.strokeColor = 'white';
     this.fillColor = 'black';
     this.trailColor = 'white';
-    this.trailLength = 5;
-    this.trailVisible = 0;
+    this.trailLength = 20;
     this.trailHistory = [];
     
     this.center = PE.createPoint(this.x, this.y);
@@ -181,14 +180,16 @@ class Drone {
                      right: createVector(this.right_points[0].x,
                                          this.right_points[0].y)};
     this.trailHistory.push(currTrail);
-    if (this.trailHistory.length > 10) {
+    if (this.trailHistory.length > this.trailLength) {
       this.trailHistory.splice(0, 1);
     }
     
     push();
     
-    let trailLeftOpacity = 80*atan(mag(this.left_points[1].vel_x, this.left_points[1].vel_y)/25);
-    let trailRightOpacity = 80*atan(mag(this.right_points[0].vel_x, this.right_points[1].vel_y)/25);
+    let trailLeftOpacity = atan(mag(this.left_points[1].vel_x, this.left_points[1].vel_y)/25)/(PI/2);
+    trailLeftOpacity *= pow(trailLeftOpacity, 3)*200;
+    let trailRightOpacity = atan(mag(this.right_points[0].vel_x, this.right_points[1].vel_y)/25)/(PI/2);
+    trailRightOpacity *= pow(trailRightOpacity, 3)*200;
     let trailWeight = 10;
     strokeCap(SQUARE)
     
