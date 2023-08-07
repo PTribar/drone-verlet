@@ -2,12 +2,7 @@
 
 :::QOL:::
 1. submit button optimization
- > submit available after typing
  > submitted notification
-2. follow drone in options *maybe not*
-3. restart without typing using space/r
-4. default button in options
-5. ground design button
 
 :::features:::
 1. view highscores in menu
@@ -18,7 +13,6 @@
 
 :::design:::
 1. background (optional)
-2. color selector
 
 */
 
@@ -38,7 +32,14 @@ class SceneHandler {
         }
       });
     }
-    
+  }
+  
+  getCurrSceneName() {
+    if (typeof this.curr_scene == 'number') {
+      return this.scenes[this.curr_scene].name;
+    } else if (typeof this.curr_scene == 'string') {
+      return this.curr_scene;
+    }
   }
 }
 // title_scene code ----------------------------------
@@ -82,7 +83,7 @@ function title_scene_init() {
     content: '?',
     contentSize: 32,
     align: CENTER,
-    posX: nativeWidth-200,
+    posX: nativeWidth-220,
     posY: nativeHeight-40,
     sizeX: 50,
     sizeY: 50,
@@ -97,26 +98,28 @@ function title_scene_init() {
   
   updateLogWindow = new Window({
     contents: [
-      {content: 'v1.11 Patch Notes', contentAlign: CENTER, contentSize: 36},
+      {content: 'v1.2 Patch Notes', contentAlign: CENTER, contentSize: 36},
       {content: '', contentAlign: CENTER, contentSize: 32},
       {content: '- system changes -', contentAlign: CENTER, contentSize: 32},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '1. submit system optimized ', contentAlign: LEFT, contentSize: 24},
-      {content: ' * can submit after typing', contentAlign: LEFT, contentSize: 20},
+      {content: '1. menu navi optimized ', contentAlign: LEFT, contentSize: 24},
+      {content: ' * (ctrl+)enter to start', contentAlign: LEFT, contentSize: 20},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '2. restarting made easier', contentAlign: LEFT, contentSize: 24},
-      {content: ' * can restart without input', contentAlign: LEFT, contentSize: 20},
+      {content: '2. rendering optimized', contentAlign: LEFT, contentSize: 24},
+      {content: ' * redundant physics removed', contentAlign: LEFT, contentSize: 20},
       {content: '', contentAlign: CENTER, contentSize: 32},
       {content: '- features -', contentAlign: CENTER, contentSize: 32},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '1. added theme selector', contentAlign: LEFT, contentSize: 24},
-      {content: ' * 6 themes in options', contentAlign: LEFT, contentSize: 20},
-      {content: '2. added update log', contentAlign: LEFT, contentSize: 24},
+      {content: '1. added ground selectors', contentAlign: LEFT, contentSize: 24},
+      {content: ' * 2 styles in options', contentAlign: LEFT, contentSize: 20},
+      {content: '', contentAlign: LEFT, contentSize: 12},
+      {content: '2. added drone trails', contentAlign: LEFT, contentSize: 24},
     ],
     contentPosition: TOP,
     contentSize: 16,
     contentGap: 16,
     contentColor: secondaryColor,
+    borderWeight: 8,
     align: CENTER,
     visible: false,
     fillColor: primaryColor,
@@ -136,7 +139,7 @@ function title_scene() {
   fill(secondaryColor);
   textSize(32);
   textAlign(RIGHT);
-  text('v1.11', nativeWidth-16, nativeHeight-16);
+  text('v1.2', nativeWidth-16, nativeHeight-16);
   textSize(96);
   textAlign(CENTER);
   text('DRONE VERLET', nativeWidth/2, nativeHeight*0.45);
@@ -154,6 +157,11 @@ function title_scene() {
   
   updateLogWindow.render();
   viewLogButton.render();
+  
+  if (pressed.has("Enter")) {
+    SH.curr_scene = "game_scene";
+  }
+  
 }
 
 
@@ -166,6 +174,7 @@ let releaseSensSlider;
 let maxThrustSlider;
 let autoThrustSlider;
 let themeSelector = [];
+let groundSelector = [];
 let themeColors = [
   {primary: 'black', secondary: 'white', accent: 'white'},
   {primary: 'navy', secondary: 'yellow', accent: 'cyan'},
@@ -204,11 +213,26 @@ function updateTheme() {
     themeSelector[i].borderColor = themeColors[i].secondary;
     themeSelector[i].hoverBorderColor = setBrightness(themeColors[i].secondary, brightness(themeColors[i].secondary)*0.5);
     themeSelector[i].pressBorderColor = themeColors[i].primary;
-    
-    themeSelector[i].hoverContentColor = setBrightness(themeColors[i].primary, brightness(themeColors[i].primary)*0.5);
-    themeSelector[i].pressContentColor = themeColors[i].primary;
-    
   }
+  
+  
+  groundSelector.forEach(ground => {
+    ground.fillColor = primaryColor;
+    ground.hoverFillColor = setBrightness(primaryColor, brightness(primaryColor)*0.5);
+    ground.pressFillColor = secondaryColor;
+    ground.inactiveFillColor = ground.hoverFillColor;
+    
+    ground.borderColor = secondaryColor;
+    ground.hoverBorderColor = setBrightness(secondaryColor, brightness(secondaryColor)*0.5);
+    ground.pressBorderColor = primaryColor;
+    ground.inactiveBorderColor = ground.hoverBorderColor;
+    
+    ground.contentColor = ground.borderColor
+    ground.hoverContentColor = ground.hoverBorderColor
+    ground.pressContentColor = ground.pressBorderColor
+    ground.inactiveContentColor = ground.inactiveBorderColor
+  })
+    
   
   updateLogWindow.contentColor = secondaryColor;
   updateLogWindow.borderColor = secondaryColor;
@@ -216,9 +240,11 @@ function updateTheme() {
   
   drone.fillColor = primaryColor;
   drone.strokeColor = accentColor;
+  drone.trailColor = accentColor;
   
   demoDrone.fillColor = primaryColor;
   demoDrone.strokeColor = accentColor;
+  demoDrone.trailColor = accentColor;
   
   staticDrone.fillColor = primaryColor;
   staticDrone.strokeColor = accentColor;
@@ -232,10 +258,11 @@ function resetValues() {
   maxThrustSlider.setValue(3000);
   autoThrustSlider.setValue(0);
   themeSelector[0].onPressed();
+  groundSelector[0].onPressed();
 }
 
 function options_scene_init() {
-  optionGap = 0.9;
+  optionGap = 0.85;
   
   defaultButton = new Button({
     content: 'DEFAULT',
@@ -253,7 +280,7 @@ function options_scene_init() {
     content: '',
     contentSize: 30,
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.3*optionGap - 20,
+    posY: 330 + 130*optionGap*0,
     sizeX: 40,
     sizeY: 40,
     align: CENTER,
@@ -272,7 +299,7 @@ function options_scene_init() {
   
   thrustSensSlider = new Slider({
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.4*optionGap-20,
+    posY:  330 + 130*optionGap*1,
     length: nativeWidth*0.3,
     handle: revControlButton.clone(),
     minValue: 0.1, 
@@ -284,7 +311,7 @@ function options_scene_init() {
   
   releaseSensSlider = new Slider({
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.5*optionGap-20,
+    posY:  330 + 130*optionGap*2,
     length: nativeWidth*0.3,
     handle: revControlButton.clone(),
     minValue: 0.01,
@@ -296,7 +323,7 @@ function options_scene_init() {
   
   maxThrustSlider = new Slider({
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.6*optionGap-20,
+    posY:  330 + 130*optionGap*3,
     length: nativeWidth*0.3,
     handle: revControlButton.clone(),
     minValue: 3000,
@@ -307,7 +334,7 @@ function options_scene_init() {
   
   autoThrustSlider = new Slider({
     posX: nativeWidth*0.55,
-    posY: nativeHeight*0.7*optionGap-20,
+    posY:  330 + 130*optionGap*4,
     length: nativeWidth*0.3,
     handle: revControlButton.clone(),
     minValue: 0,
@@ -319,7 +346,7 @@ function options_scene_init() {
   for (let i=0; i<themeColors.length; i++) {
     themeSelector.push(new Button({
       posX: nativeWidth*0.55+80*i,
-      posY: nativeHeight*0.8*optionGap-20,
+    posY:  330 + 130*optionGap*5,
       sizeX: 60,
       fillColor: themeColors[i].primary,
       borderColor: themeColors[i].secondary,
@@ -334,6 +361,21 @@ function options_scene_init() {
     }))
   }
   
+  for (let i=0; i<2; i++) {
+    groundSelector.push(new Button({
+      content: ''+i,
+      contentSize: 32,
+      posX: nativeWidth*0.55+80*i,
+    posY:  330 + 130*optionGap*6,
+      sizeX: 60,
+      align: CENTER,
+      borderWeight: 8,
+      onPressed: function () {
+        groundStyle = i;
+      },
+    }))
+  }
+  
   demoDrone = new Drone(nativeWidth/2, nativeHeight*0.9);
 }
 
@@ -344,12 +386,13 @@ function options_scene() {
   text('OPTIONS', nativeWidth/2, nativeHeight*0.1);
   textSize(32);
   textAlign(LEFT);
-  text('Reverse Controls', 50, nativeHeight*0.3*optionGap);
-  text('Thrust Sensitivity', 50, nativeHeight*0.4*optionGap);
-  text('Release Sensitivity', 50, nativeHeight*0.5*optionGap);
-  text('Thrust Power', 50, nativeHeight*0.6*optionGap);
-  text('Auto Thrust Power', 50, nativeHeight*0.7*optionGap);
-  text('Theme', 50, nativeHeight*0.8*optionGap);
+  text('Reverse Controls', 50, 330 + 130*optionGap*0+20);
+  text('Thrust Sensitivity', 50, 330 + 130*optionGap*1+20);
+  text('Release Sensitivity', 50, 330 + 130*optionGap*2+20);
+  text('Thrust Power', 50, 330 + 130*optionGap*3+20);
+  text('Auto Thrust Power', 50, 330 + 130*optionGap*4+20);
+  text('Theme', 50, 330 + 130*optionGap*5+20);
+  text('Ground', 50, 330 + 130*optionGap*6+20);
   
   defaultButton.render();
   revControlButton.render();
@@ -358,16 +401,17 @@ function options_scene() {
   maxThrustSlider.render();
   autoThrustSlider.render();
   themeSelector.forEach(theme => {theme.render()});
+  groundSelector.forEach(ground => {ground.render()});
   
   if (!revControlButton.options.value) {
-    text('Q: Left, P: Right', nativeWidth*0.6, nativeHeight*0.3*optionGap);
+    text('Q: Left, P: Right', nativeWidth*0.6, 330 + 130*optionGap*0+20);
   } else { 
-    text('P: Left, Q: Right', nativeWidth*0.6, nativeHeight*0.3*optionGap);
+    text('P: Left, Q: Right', nativeWidth*0.6, 330 + 130*optionGap*0+20);
   }
-  text(nf(thrustSensSlider.value,0,1), nativeWidth*0.9, nativeHeight*0.4*optionGap);
-  text(nf(releaseSensSlider.value,0,2), nativeWidth*0.9, nativeHeight*0.5*optionGap);
-  text(round(maxThrustSlider.value,0), nativeWidth*0.9, nativeHeight*0.6*optionGap);
-  text(round(autoThrustSlider.value,0), nativeWidth*0.9, nativeHeight*0.7*optionGap);
+  text(nf(thrustSensSlider.value,0,1), nativeWidth*0.9, 330 + 130*optionGap*1+20);
+  text(nf(releaseSensSlider.value,0,2), nativeWidth*0.9, 330 + 130*optionGap*2+20);
+  text(round(maxThrustSlider.value,0), nativeWidth*0.9, 330 + 130*optionGap*3+20);
+  text(round(autoThrustSlider.value,0), nativeWidth*0.9, 330 + 130*optionGap*4+20);
   
   let dt = 1/60;
   camera.x = 0;
@@ -402,7 +446,6 @@ let isGrounded;
 let groundedTimer;
 
 let isTyping;
-let prevInput = [];
 let nameInput = [];
 
 // game_scene code ----------------------------------
@@ -438,7 +481,6 @@ function game_scene() {
   // draw ground and follow drone
   push();
   translate(nativeWidth-camera.x, 0);
-  drawGround(PE.points[0].floor_level, PE.points[0].ceiling_level);
   
   
   // drone controls
@@ -451,6 +493,8 @@ function game_scene() {
 
   drone.update();
   drone.render();
+  
+  drawGround(drone.drone_points[0].floor_level, drone.drone_points[0].ceiling_level);
   pop();
   
   // update previous score
@@ -469,7 +513,6 @@ function game_scene() {
     retryScreen.active = true;
     if (canControl) {
       isTyping = true;
-      prevInput = [];
       nameInput = [];
       retryScreen.saveResult();
     }

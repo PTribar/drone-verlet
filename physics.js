@@ -50,14 +50,29 @@ class PhysicsEnvironment {
     this.sticks.push(stick);
     return stick;
   }
+  
+  destroyPoint(point) {
+    let pointIndex = this.points.indexOf(point);
+    this.points.splice(pointIndex, 1);
+    this.sticks.filter((stick, index, array) => {
+      if (stick.p0 == point || stick.p1 == point) {
+        array.splice(index, 1);
+        return true;
+      }
+      return false;
+    })
+  }
+  
 }
 
 class PhysicsPoint {
-  constructor(x, y, mass=1, pinned, visible=false) {
+  constructor(x, y, mass=1, pinned=false, visible=false) {
     this.x = x;
     this.y = y;
     this.old_x = x;
     this.old_y = y;
+    this.vel_x = this.x - this.old_x;
+    this.vel_y = this.y - this.old_x;
     this.force_x = 0;
     this.force_y = 0;
     this.bounce_index = 0.9;
@@ -72,8 +87,8 @@ class PhysicsPoint {
   update(dt) {
     if (this.pinned) return;
     
-    let vel_x = (this.x - this.old_x);
-    let vel_y = (this.y - this.old_y) * this.drag_index;
+    this.vel_x = this.x - this.old_x;
+    this.vel_y = (this.y - this.old_y) * this.drag_index;
 
     // The current position becomes the old one
     this.old_x = this.x;
@@ -84,14 +99,14 @@ class PhysicsPoint {
     let acc_y = this.force_y / this.mass;
 
     // Estimate the new position using Verlet integration
-    this.x += vel_x + acc_x * dt*dt;
-    this.y += vel_y + acc_y * dt*dt;
+    this.x += this.vel_x + acc_x * dt*dt;
+    this.y += this.vel_y + acc_y * dt*dt;
   }
   constrain() {
     if (this.pinned) return;
     
-    let vel_x = (this.x - this.old_x);
-    let vel_y = (this.y - this.old_y);
+    // let vel_x = (this.x - this.old_x);
+    // let vel_y = (this.y - this.old_y);
     // if (this.x < 0) {
     //   this.x = 0;
     //   this.old_x = this.x + vel_x * this.bounce_index;
@@ -103,18 +118,20 @@ class PhysicsPoint {
     // }
     if (this.y < this.ceiling_level) {
       this.y = this.ceiling_level;
-      this.old_y = this.y + vel_y * this.bounce_index;
-      this.old_x += vel_x * this.friction_index;
+      this.old_y = this.y + this.vel_y * this.bounce_index;
+      this.old_x += this.vel_x * this.friction_index;
     } else if (this.y > nativeHeight-this.floor_level) {
       this.y = nativeHeight-this.floor_level;
-      this.old_y = this.y + vel_y * this.bounce_index;
-      this.old_x += vel_x * this.friction_index;
+      this.old_y = this.y + this.vel_y * this.bounce_index;
+      this.old_x += this.vel_x * this.friction_index;
     }
   }
   render() {
+    push();
     noStroke();
     fill("white");
     circle(this.x, this.y, 5);
+    pop();
   }
   applyForce(x, y) {
     this.force_x += x;
@@ -158,7 +175,9 @@ class PhysicsStick {
     }
   }
   render() {
+    push();
     stroke('gray');
     line(this.p0.x, this.p0.y, this.p1.x, this.p1.y);
+    pop();
   }
 }

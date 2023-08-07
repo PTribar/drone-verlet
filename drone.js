@@ -15,6 +15,10 @@ class Drone {
     this.static = isStatic;
     this.strokeColor = 'white';
     this.fillColor = 'black';
+    this.trailColor = 'white';
+    this.trailLength = 5;
+    this.trailVisible = 0;
+    this.trailHistory = [];
     
     this.center = PE.createPoint(this.x, this.y);
     
@@ -47,6 +51,7 @@ class Drone {
       PE.createPoint(this.x-this.wing_size-(this.body_size*1.3), this.y-10),
       PE.createPoint(this.x+this.wing_size-(this.body_size*1.3), this.y-10),
     ];
+
     
     this.left_sticks = [
       PE.createStick(this.left_points[0], this.left_points[1]),
@@ -125,6 +130,8 @@ class Drone {
                   concat(this.right_points).concat(this.leg_points);
     
     this.drone_points.forEach(pt => {pt.pinned = this.static});
+    
+    
   }
   
   update(debug = false) {
@@ -169,7 +176,36 @@ class Drone {
   }
   
   render() {
+    let currTrail = {left: createVector(this.left_points[1].x,
+                                        this.left_points[1].y),
+                     right: createVector(this.right_points[0].x,
+                                         this.right_points[0].y)};
+    this.trailHistory.push(currTrail);
+    if (this.trailHistory.length > 10) {
+      this.trailHistory.splice(0, 1);
+    }
+    
     push();
+    
+    let trailLeftOpacity = 80*atan(mag(this.left_points[1].vel_x, this.left_points[1].vel_y)/25);
+    let trailRightOpacity = 80*atan(mag(this.right_points[0].vel_x, this.right_points[1].vel_y)/25);
+    let trailWeight = 10;
+    strokeCap(SQUARE)
+    
+    for (let i=0; i<this.trailHistory.length-1; i++) {
+      strokeWeight(trailWeight*i/this.trailHistory.length);
+      stroke(red(this.trailColor), green(this.trailColor), blue(this.trailColor),
+             trailLeftOpacity*i/this.trailHistory.length);
+      line(this.trailHistory[i].left.x, this.trailHistory[i].left.y,
+           this.trailHistory[i+1].left.x, this.trailHistory[i+1].left.y);
+      stroke(red(this.trailColor), green(this.trailColor), blue(this.trailColor),
+             trailRightOpacity*i/this.trailHistory.length);
+      line(this.trailHistory[i].right.x, this.trailHistory[i].right.y,
+           this.trailHistory[i+1].right.x, this.trailHistory[i+1].right.y);
+    }
+    
+    
+    
     strokeWeight(5);
     stroke(this.strokeColor);
     strokeCap(SQUARE);
@@ -181,7 +217,6 @@ class Drone {
     vertex(this.left_points[2].x, this.left_points[2].y);
     vertex(this.left_points[1].x, this.left_points[1].y);
     endShape();
-    
     // right frame
     beginShape();
     vertex(this.right_points[0].x, this.right_points[0].y);
@@ -281,7 +316,7 @@ class Drone {
   }
   
   debug() {
-    
+    push();
     let left_center = createVector(
       ((this.left_points[0].x + this.left_points[1].x)/2 + (this.left_points[2].x + this.left_points[3].x)/2)/2,
       ((this.left_points[0].y + this.left_points[1].y)/2 + (this.left_points[2].y + this.left_points[3].y)/2)/2
@@ -296,6 +331,7 @@ class Drone {
     
     stroke('red');
     line(right_center.x, right_center.y, right_center.x+this.right_force.x/this.maxThrust*800, right_center.y+this.right_force.y/this.maxThrust*800);
+    pop();
   }
   
 }

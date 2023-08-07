@@ -4,6 +4,7 @@ let buttonArray = [];
 let primaryColor;
 let secondaryColor;
 let accentColor;
+let groundStyle;
 // --------------
 
 
@@ -28,6 +29,7 @@ function setup() {
   primaryColor = themeColors[0].primary;
   secondaryColor = themeColors[0].secondary;
   accentColor = themeColors[0].accent;
+  groundStyle = 0;
   
   PE = new PhysicsEnvironment();
   drone = new Drone(0, nativeHeight*0.9);
@@ -73,36 +75,61 @@ function keyPressed(evt) {
   
   const charLimit = 10;
   
-  prevInput = [...nameInput];
-  
   if (isTyping) {
+    
+    // enter to submit score
     if (key == "Enter") {
-      isTyping = false;
+      retryScreen.submitButton.onPressed();
+      // retry if no name was input
       if (nameInput.length==0) {
         retry();
       }
-    } else if (key == "Backspace") {
+      return;
+    }
+    
+    // backspace to remove last character
+    else if (key == "Backspace") {
       nameInput.pop();
-    } else if (key.length == 1 && key != " ") {
+    }
+    
+    // valid character input
+    else if (key.length == 1) {
+      
+      // push character if not over character limit
       if (nameInput.length < charLimit) {
         nameInput.push(key); 
-      } else {
+      }
+      
+      // replace last character if over character limit
+      else {
         nameInput[charLimit-1] = key;
       }
-    } else if (key == "Escape" || key == " ") {
+    }
+    
+    // escape to stop typing and retry
+    else if (key == "Escape") {
+      isTyping = false;
       retry();
     }
+    
+    // save name in local entries while typing
     if (isTyping) {
       localEntries[localEntries.length-1].name = nameInput.join("");
     }
+    
+    // activate submit button if more than one character is inputted
     if (nameInput.length != 0) {
       retryScreen.submitButton.isActive = true;
     } else {
       retryScreen.submitButton.isActive = false;
     }
-  } else if (key == "Enter" && retryScreen.submitButton.isActive && nameInput != '') {
-    retryScreen.submitButton.onPressed();
-  } else if (key == " " || key == "r" || key == "Enter") {
+  }
+  
+  // after name was inputted
+  else if (key == " " || key == "r" || key == "Enter") {
+    if (pressed.has("ControlLeft") || pressed.has("ControlRight")) {
+      SH.curr_scene = 'game_scene';
+    }
     retry();
   } else if (key == "Escape") {
     SH.curr_scene = 'title_scene';
@@ -115,8 +142,30 @@ function keyReleased(evt) {
 }
 
 function retry() {
-  drone = new Drone(0, nativeHeight*0.8);
-  demoDrone = new Drone(nativeWidth*0.5, nativeHeight*0.9);
+  drone.drone_points.forEach(point => {
+    PE.destroyPoint(point);
+  })
+  demoDrone.drone_points.forEach(point => {
+    PE.destroyPoint(point);
+  })
+  staticDrone.drone_points.forEach(point => {
+    PE.destroyPoint(point);
+  })
+  drone.drone_points.forEach(point => {
+    PE.destroyPoint(point);
+  })
+  demoDrone.drone_points.forEach(point => {
+    PE.destroyPoint(point);
+  })
+  staticDrone.drone_points.forEach(point => {
+    PE.destroyPoint(point);
+  })
+  // if (SH.getCurrSceneName() == 'game_scene') {
+    drone = new Drone(0, nativeHeight*0.8);
+  // } else if (SH.getCurrSceneName() == 'options_scene') {
+    demoDrone = new Drone(nativeWidth*0.5, nativeHeight*0.9);
+  // }
+  
   updateTheme();
   
   retryScreen.active = false;
@@ -154,27 +203,42 @@ function droneControl(drone) {
 
 function drawGround(floor_level, ceiling_level) {
   push();
-  strokeWeight(5);
-  fill(secondaryColor);
-  stroke(secondaryColor);
-  offsetX = 70*10*floor(camera.x/(70*10));
-  line(offsetX-nativeWidth*2, nativeHeight-floor_level, offsetX+nativeWidth*2, nativeHeight-floor_level);
-  for (let i=0; i<nativeWidth/10; i++) {
-    quad(offsetX-nativeWidth*2+70*i, nativeHeight-floor_level,
-         offsetX-nativeWidth*2+70*i+20, nativeHeight-floor_level,
-         offsetX-nativeWidth*2+70*i, nativeHeight-floor_level+20,
-         offsetX-nativeWidth*2+70*i-20, nativeHeight-floor_level+20);
+  if (groundStyle == 0) {
+    strokeWeight(5);
+    fill(secondaryColor);
+    stroke(secondaryColor);
+    offsetX = nativeWidth/2*floor(camera.x/(nativeWidth/2));
+    line(offsetX-nativeWidth*2, nativeHeight-floor_level, offsetX+nativeWidth*2, nativeHeight-floor_level);
+    for (let i=-nativeWidth; i<nativeWidth; i+=nativeWidth/20) {
+      quad(offsetX+i, nativeHeight-floor_level,
+           offsetX+i+20, nativeHeight-floor_level,
+           offsetX+i, nativeHeight-floor_level+20,
+           offsetX+i-20, nativeHeight-floor_level+20);
+    }
+    line(offsetX-nativeWidth*2, nativeHeight-floor_level+20, offsetX+nativeWidth*2, nativeHeight-floor_level+20);
+    line(offsetX-nativeWidth*2, nativeHeight-floor_level+40, offsetX+nativeWidth*2, nativeHeight-floor_level+40);
+
+    line(offsetX-nativeWidth*2, ceiling_level, offsetX+nativeWidth*2, ceiling_level);
+    for (let i=-nativeWidth; i<nativeWidth; i+=nativeWidth/20) {
+      quad(offsetX+i, ceiling_level,
+           offsetX+i+20, ceiling_level,
+           offsetX+i, ceiling_level-20,
+           offsetX+i-20, ceiling_level-20);
+    }
+    line(offsetX-nativeWidth*2, ceiling_level-20, offsetX+nativeWidth*2, ceiling_level-20);
+    line(offsetX-nativeWidth*2, ceiling_level-40, offsetX+nativeWidth*2, ceiling_level-40);
+  } else if (groundStyle == 1) {
+    strokeWeight(10);
+    fill(secondaryColor);
+    stroke(secondaryColor);
+    offsetX = nativeWidth/2*floor(camera.x/(nativeWidth/2));
+    line(offsetX-nativeWidth*2, nativeHeight-floor_level, offsetX+nativeWidth*2, nativeHeight-floor_level);
+    line(offsetX-nativeWidth*2, ceiling_level, offsetX+nativeWidth*2, ceiling_level);
+    
+    strokeWeight(5);
+    line(offsetX-nativeWidth*2, nativeHeight-floor_level+20, offsetX+nativeWidth*2, nativeHeight-floor_level+20);
+    line(offsetX-nativeWidth*2, ceiling_level-20, offsetX+nativeWidth*2, ceiling_level-20);
   }
-  line(offsetX-nativeWidth*2, nativeHeight-floor_level+20, offsetX+nativeWidth*2, nativeHeight-floor_level+20);
-  
-  line(offsetX-nativeWidth*2, ceiling_level, offsetX+nativeWidth*2, ceiling_level);
-  for (let i=0; i<nativeWidth/10; i++) {
-    quad(offsetX-nativeWidth*2+70*i, ceiling_level,
-         offsetX-nativeWidth*2+70*i+20, ceiling_level,
-         offsetX-nativeWidth*2+70*i, ceiling_level-20,
-         offsetX-nativeWidth*2+70*i-20, ceiling_level-20);
-  }
-  line(offsetX-nativeWidth*2, ceiling_level-20, offsetX+nativeWidth*2, ceiling_level-20);
   pop();
 }
 
@@ -224,6 +288,7 @@ class RetryScreen {
       sizeX: this.sizeX/3,
       sizeY: 60,
       onPressed: function () {
+        isTyping = false;
         submitScore();
         this.isActive=false;
       },
@@ -253,7 +318,6 @@ class RetryScreen {
     } else { 
       this.y = lerp(this.y, this.inactiveHeight, 0.1);
       this.resetAnim();
-      prevInput = [];
       nameInput = [];
     }
     
