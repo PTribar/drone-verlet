@@ -237,6 +237,8 @@ class Window {
     this.visible = options.visible!=null? options.visible : true;
     this.rounded = options.rounded || [0,0,0,0];
     this.runningFunction = options.runningFunction || function () {return;};
+    
+    windowArray.push(this);
   }
   
   render() {

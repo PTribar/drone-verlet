@@ -42,12 +42,15 @@ class SceneHandler {
     }
   }
 }
+
+
 // title_scene code ----------------------------------
 let startButton;
 let optionsButton;
 let staticDrone;
 let droneFloatAnim;
 let viewLogButton;
+let leaderboardButton;
 let updateLogWindow;
 
 function title_scene_init() {
@@ -95,25 +98,35 @@ function title_scene_init() {
       }
     }
   })
+
+  leaderboardButton = new Button({
+    content: '~',
+    contentSize: 32,
+    align: CENTER,
+    posX: 40,
+    posY: nativeHeight-40,
+    sizeX: 50,
+    sizeY: 50,
+    onPressed: function () {
+      leaderboard_scene_init();
+      SH.curr_scene = 'leaderboard_scene';
+    }
+  })
   
   updateLogWindow = new Window({
     contents: [
-      {content: 'v1.2 Patch Notes', contentAlign: CENTER, contentSize: 36},
+      {content: 'v1.3 Patch Notes', contentAlign: CENTER, contentSize: 36},
       {content: '', contentAlign: CENTER, contentSize: 32},
       {content: '- system changes -', contentAlign: CENTER, contentSize: 32},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '1. menu navi optimized ', contentAlign: LEFT, contentSize: 24},
-      {content: ' * (ctrl+)enter to start', contentAlign: LEFT, contentSize: 20},
+      {content: '1. camera optimized ', contentAlign: LEFT, contentSize: 24},
+      {content: ' * no delays at fast speeds', contentAlign: LEFT, contentSize: 20},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '2. rendering optimized', contentAlign: LEFT, contentSize: 24},
-      {content: ' * redundant physics removed', contentAlign: LEFT, contentSize: 20},
       {content: '', contentAlign: CENTER, contentSize: 32},
       {content: '- features -', contentAlign: CENTER, contentSize: 32},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '1. added ground selectors', contentAlign: LEFT, contentSize: 24},
-      {content: ' * 2 styles in options', contentAlign: LEFT, contentSize: 20},
-      {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '2. added drone trails', contentAlign: LEFT, contentSize: 24},
+      {content: '1. added leaderboards', contentAlign: LEFT, contentSize: 24},
+      {content: ' * updates everyweek', contentAlign: LEFT, contentSize: 20},
     ],
     contentPosition: TOP,
     contentSize: 16,
@@ -139,7 +152,7 @@ function title_scene() {
   fill(secondaryColor);
   textSize(32);
   textAlign(RIGHT);
-  text('v1.2', nativeWidth-16, nativeHeight-16);
+  text('v1.3', nativeWidth-16, nativeHeight-16);
   textSize(96);
   textAlign(CENTER);
   text('DRONE VERLET', nativeWidth/2, nativeHeight*0.45);
@@ -157,6 +170,7 @@ function title_scene() {
   
   updateLogWindow.render();
   viewLogButton.render();
+  leaderboardButton.render();
   
   if (pressed.has("Enter")) {
     SH.curr_scene = "game_scene";
@@ -232,11 +246,12 @@ function updateTheme() {
     ground.pressContentColor = ground.pressBorderColor
     ground.inactiveContentColor = ground.inactiveBorderColor
   })
-    
   
-  updateLogWindow.contentColor = secondaryColor;
-  updateLogWindow.borderColor = secondaryColor;
-  updateLogWindow.fillColor = primaryColor;
+  windowArray.forEach(window => {
+    window.fillColor = primaryColor;    
+    window.borderColor = secondaryColor;    
+    window.contentColor = secondaryColor;
+  });
   
   drone.fillColor = primaryColor;
   drone.strokeColor = accentColor;
@@ -425,6 +440,118 @@ function options_scene() {
   menuButton.render();
 }
 
+// leaderboard_scene code ----------------------------------
+
+
+let leaderboardWindows = [];
+let leaderboardOffset;
+let leaderboardGap;
+let leaderboardData = [];
+let dragStart;
+let dragEnd;
+let lastRelativeMouseX;
+let lastRelativeMouseY;
+let scrollSpeed;
+
+function leaderboard_scene_init() {
+  
+  for (let i=0; i<=database.curr_week; i++) {
+    leaderboardData[i] = [];
+    
+    if (leaderboardData[i].length == 0) {
+        database.getScores(leaderboardData[i], 'week'+i);
+    }
+    
+    leaderboardWindows[i] = new Window({
+      contents: [
+        {content: '** LEADERBOARD **', contentAlign: CENTER, contentSize: 36},
+          {content: '- week '+i+' -', contentAlign: CENTER, contentSize: 32},
+          {content: '', contentAlign: CENTER, contentSize: 8},
+      ],
+      contentPosition: TOP,
+      contentSize: 16,
+      contentGap: 20,
+      contentColor: secondaryColor,
+      borderWeight: 8,
+      align: CENTER,
+      visible: true,
+      fillColor: primaryColor,
+      marginX: 50,
+      marginY: 50,
+      posX: nativeWidth/2,
+      posY: nativeHeight/2,
+      sizeX: nativeWidth*0.5,
+      sizeY: nativeHeight*0.9,
+    });
+    
+  }
+  
+  
+  leaderboardOffset = nativeWidth/2;
+  leaderboardGap = 50;
+  
+  lastRelativeMouseX = mouseX/resolution;
+  scrollSpeed = 0;
+  
+}
+
+function leaderboard_scene() {
+  
+  if ((frameCount-50) % 3600 == 0) {
+    leaderboard_scene_init();
+  }
+  
+  for (let i=0; i<leaderboardData.length; i++) {
+    
+    let sortedEntries = [...leaderboardData[i]];
+    sortedEntries.sort((a, b) => b.score - a.score);
+    for (let j=0; j<min(sortedEntries.length, 20); j++) {
+      let content = (j+1)+((j>=9)?'. ':'.  ')+sortedEntries[j].name+
+          ' '.repeat(10-sortedEntries[j].name.length)+
+          ' '.repeat(7-(sortedEntries[j].score).toString().length)+sortedEntries[j].score;
+      leaderboardWindows[i].contents[3+j] = {content: content,
+                                             contentAlign: LEFT, contentSize: 28};
+    }
+    
+  }
+  
+  let relativeMouseX = mouseX/resolution;
+  let offsetMin = -(leaderboardWindows.length-2)*(leaderboardWindows[0].sizeX+leaderboardGap);
+  let offsetMax = nativeWidth/2;
+  
+  if (mouseIsPressed) {
+    scrollSpeed = relativeMouseX-lastRelativeMouseX;
+    leaderboardOffset += scrollSpeed;
+  } else {
+    if (leaderboardOffset > offsetMax) {
+      scrollSpeed = lerp(scrollSpeed, 0, 0.2);
+      leaderboardOffset = lerp(leaderboardOffset+scrollSpeed, offsetMax, 0.1);
+    } else if (leaderboardOffset < offsetMin) {
+      scrollSpeed = lerp(scrollSpeed, 0, 0.2);
+      leaderboardOffset = lerp(leaderboardOffset+scrollSpeed, offsetMin, 0.1);
+    } else {
+      scrollSpeed = lerp(scrollSpeed, 0, 0.1);
+      leaderboardOffset += scrollSpeed;
+    }
+  }
+  if (pressed.has("ArrowLeft")) {
+    leaderboardOffset += 20;
+  }
+  if (pressed.has("ArrowRight")) {
+    leaderboardOffset -= 20;
+  }
+
+
+  leaderboardWindows.forEach((window, index) => {
+    window.posX = (leaderboardWindows.length-index-1)*(window.sizeX+leaderboardGap) + leaderboardOffset;
+    window.render();
+  })
+  
+  lastRelativeMouseX = relativeMouseX;
+  
+  menuButton.render();
+}
+
 
 // game_scene code ----------------------------------
 
@@ -464,7 +591,7 @@ function game_scene_init() {
 function game_scene() {
   
   let dt = 1/60;
-  camera.x = drone.center.x + nativeWidth/2;
+  camera.x = drone.center.x + nativeWidth/2 + drone.center.vel_x;
   textAlign(CENTER);
   noStroke();
   score = drone.center.x/1000;
@@ -522,3 +649,5 @@ function game_scene() {
   
   menuButton.render();
 }
+
+

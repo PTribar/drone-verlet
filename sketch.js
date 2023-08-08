@@ -1,5 +1,6 @@
 let menuButton;
 let buttonArray = [];
+let windowArray = [];
 
 let primaryColor;
 let secondaryColor;
@@ -33,9 +34,11 @@ function setup() {
   
   PE = new PhysicsEnvironment();
   drone = new Drone(0, nativeHeight*0.9);
+  database_init();
   title_scene_init();
   options_scene_init();
   game_scene_init();
+  leaderboard_scene_init();
   
   menuButton = new Button({
     content: '<',
@@ -55,9 +58,9 @@ function setup() {
   SH = new SceneHandler();
   SH.scenes.push(title_scene);
   SH.scenes.push(options_scene);
+  SH.scenes.push(leaderboard_scene);
   SH.scenes.push(game_scene);
   
-  database_init();
   
   updateTheme();
 }
@@ -78,11 +81,14 @@ function keyPressed(evt) {
   if (isTyping) {
     
     // enter to submit score
-    if (key == "Enter") {
-      retryScreen.submitButton.onPressed();
+    if (key == "Enter" || key == " ") {
+      isTyping = false;
       // retry if no name was input
       if (nameInput.length==0) {
+        localEntries.splice(localEntries.length-1, 1);
         retry();
+      } else {
+        retryScreen.submitButton.onPressed();
       }
       return;
     }
@@ -93,7 +99,7 @@ function keyPressed(evt) {
     }
     
     // valid character input
-    else if (key.length == 1) {
+    else if (key.length == 1 && key != " ") {
       
       // push character if not over character limit
       if (nameInput.length < charLimit) {
@@ -341,8 +347,7 @@ class RetryScreen {
     fill(secondaryColor);
     textSize(this.fontSizeAnim.val);
     text(finalScore, this.x, this.y-210);
-    
-    allEntries = localEntries.concat(savedEntries);
+    allEntries = savedEntries.concat(localEntries);
     
     textSize(this.highscoreSizeAnim[0].val*1.2);
     text('- HIGHSCORES -', this.x, this.y-60);
@@ -362,7 +367,6 @@ class RetryScreen {
     // print("# of negative:", sortedEntries.length-totalPositive);
     // sortedEntries.forEach(entry => {print(entry.name, entry.score)})
     
-    
     for (let i=0; i<min(sortedEntries.length, 5); i++) {
       textAlign(LEFT)
       textSize(this.highscoreSizeAnim[i].val);
@@ -376,11 +380,11 @@ class RetryScreen {
   }
   
   saveResult() {
+    database.getScores(savedEntries);
     var result = {
       name: nameInput.join(""),
       score: int(score)
     }
-    
     localEntries[localEntries.length] = {
       name: result.name,
       score: result.score
@@ -395,6 +399,8 @@ function submitScore() {
     name: nameInput.join(""),
     score: int(score)
   }
+  
+  database.ref = database.getRef('week'+database.curr_week);
   database.ref.push(result);    
   
   localEntries.splice(localEntries.length-1, 1);

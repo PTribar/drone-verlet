@@ -1,3 +1,5 @@
+let destinationArray;
+
 function database_init() {
   
   const firebaseConfig = {
@@ -13,24 +15,33 @@ function database_init() {
   firebase.initializeApp(firebaseConfig);
   
   database = new Database(firebase.database());
-  database.getScores();
+  database.getScores(savedEntries);
 }
 
 
 class Database {
   constructor(database) {
     this.database = database;
-    this.ref = this.database.ref('week1');
+    
+    const startTime = 1691334000; // aug 8 2023
+    const unixSecondsPassed = int((Date.now()/1000-startTime))
+    const unixWeeksPassed = int(unixSecondsPassed/60/60/24);
+
+    this.curr_week = unixWeeksPassed;
+    this.ref = this.getRef('week'+this.curr_week);
   }
   
-  ref(name) {
+  getRef(name) {
     return this.database.ref(name);
   }
   
-  getScores() {
+  getScores(arrToSave, collection='week'+this.curr_week) {
+    
+    this.ref = this.getRef(collection);
+    
+    destinationArray = arrToSave;
     var result = 0;
     this.ref.on('value', this.gotData, this.errData);
-
   }
 
   gotData(data) {
@@ -41,7 +52,7 @@ class Database {
       var name = scores[k].name;
       var score = scores[k].score;
   
-      savedEntries[i] = {name: name, score: score};
+      destinationArray[i] = {name: name, score: score};
     }
     
   }

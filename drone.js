@@ -187,9 +187,9 @@ class Drone {
     push();
     
     let trailLeftOpacity = atan(mag(this.left_points[1].vel_x, this.left_points[1].vel_y)/25)/(PI/2);
-    trailLeftOpacity *= pow(trailLeftOpacity, 3)*200;
+    trailLeftOpacity *= pow(trailLeftOpacity, 3)*50 + 150;
     let trailRightOpacity = atan(mag(this.right_points[0].vel_x, this.right_points[1].vel_y)/25)/(PI/2);
-    trailRightOpacity *= pow(trailRightOpacity, 3)*200;
+    trailRightOpacity *= pow(trailRightOpacity, 3)*50 + 150;
     let trailWeight = 10;
     strokeCap(SQUARE)
     
