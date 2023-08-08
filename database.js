@@ -20,7 +20,7 @@ function database_init() {
 class Database {
   constructor(database) {
     this.database = database;
-    this.ref = this.database.ref('scores');
+    this.ref = this.database.ref('week0');
   }
   
   ref(name) {
