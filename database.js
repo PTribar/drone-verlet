@@ -23,11 +23,11 @@ class Database {
   constructor(database) {
     this.database = database;
     
-    const startTime = 1691334000; // aug 8 2023
-    const unixSecondsPassed = int((Date.now()/1000-startTime))
-    const unixWeeksPassed = int(unixSecondsPassed/60/60/24);
+    const startTime = 1690729200; // aug 8 2023
+    const unixSecondsPassed = (Date.now()/1000-startTime)
+    const unixWeeksPassed = unixSecondsPassed/60/60/24/7;
 
-    this.curr_week = unixWeeksPassed;
+    this.curr_week = int(unixWeeksPassed);
     this.ref = this.getRef('week'+this.curr_week);
   }
   
