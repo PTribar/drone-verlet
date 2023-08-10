@@ -23,10 +23,9 @@ class Database {
   constructor(database) {
     this.database = database;
     
-    const startTime = 1690729200; // aug 8 2023
+    const startTime = 1690729200; // jul 31 2023
     const unixSecondsPassed = (Date.now()/1000-startTime)
     const unixWeeksPassed = unixSecondsPassed/60/60/24/7;
-
     this.curr_week = int(unixWeeksPassed);
     this.ref = this.getRef('week'+this.curr_week);
   }

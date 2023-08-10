@@ -2,6 +2,8 @@ class Drone {
   constructor(x, y, isStatic=false) {
     this.x = x;
     this.y = y;
+    this.vel_x = x;
+    this.vel_y = y;
     this.body_size = 100;
     this.wing_size = 50;
     this.leg_length = 30;
@@ -18,6 +20,9 @@ class Drone {
     this.trailColor = 'white';
     this.trailLength = 20;
     this.trailHistory = [];
+    this.onFloor = false;
+    this.onCeiling = false;
+    this.sparks = [];
     
     this.center = PE.createPoint(this.x, this.y);
     
@@ -136,7 +141,8 @@ class Drone {
   update(debug = false) {
     this.x = this.center.x;
     this.y = this.center.y;
-    
+    this.vel_x = this.center.vel_x;
+    this.vel_y = this.center.vel_y;
     
     this.left_force = createVector(
       -(this.left_points[0].x-this.left_points[3].x + this.left_points[1].x-this.left_points[2].x)/2,
@@ -157,21 +163,45 @@ class Drone {
       point.applyForce(this.right_force.x, this.right_force.y);
     })
     
+    this.onFloor = this.checkFloor();
+    this.onCeiling = this.checkCeiling();
+
+    
     if (debug) {
       this.debug();
     }
   }
   
-  isGrounded() {
+  checkFloor() {
     let onFloor = false;
-    let onCeiling = false;
     this.drone_points.forEach(point => {
-      if (!onFloor) {
-        onFloor = point.y+1 >= nativeHeight-point.floor_level;
+      let onFloorCondition = point.y+1 >= nativeHeight-point.floor_level;
+      onFloor = onFloorCondition || onFloor;
+      if (onFloorCondition) {
+        
+        // spark function //
+        this.renderSparks(point.x, point.y)
       }
     })
     
     return onFloor;
+  }
+  
+  checkCeiling() {
+    
+    let onCeiling = false;
+    this.drone_points.forEach(point => {
+      let onCeilingCondition = point.y-1 <= point.ceiling_level;
+      onCeiling = onCeilingCondition || onCeiling;
+      if (onCeilingCondition) {
+        
+        // spark function //
+        this.renderSparks(point.x, point.y)
+
+      }
+    })
+    
+    return onCeiling;
   }
   
   render() {
@@ -314,7 +344,32 @@ class Drone {
     
     pop();
     
+    this.renderSparks();
   }
+  
+  renderSparks(x, y) {
+    push();
+    stroke(secondaryColor);
+    let quantity = 10;
+    if (this.sparks.length < quantity) {
+      let spark = PE.createPoint(x, y);
+      spark.applyForce(this.vel_x*random(-10000, 1000),
+                       (this.vel_x/2+this.vel_y)/2*random(-10000, 1000));
+      spark.lifetime = 10;
+      
+      this.sparks.push(spark);
+    }
+    
+    this.sparks.forEach((spark, index) => {
+      if (spark.lifetime == 0) {
+        this.sparks.splice(index, 1);
+      }
+      line(spark.x, spark.y, spark.old_x, spark.old_y)
+    })
+    pop();
+  }
+  
+  
   
   debug() {
     push();

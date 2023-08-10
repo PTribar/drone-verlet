@@ -12,6 +12,9 @@ class PhysicsEnvironment {
       point.applyGravity(this.gravity_x, this.gravity_y);
       point.update(dt);
       point.resetForces();
+      if (point.lifetime == 0) {
+        this.destroyPoint(point);
+      }
     }
 
     // Update all sticks
@@ -66,7 +69,7 @@ class PhysicsEnvironment {
 }
 
 class PhysicsPoint {
-  constructor(x, y, mass=1, pinned=false, visible=false) {
+  constructor(x, y, mass=1, visible=false) {
     this.x = x;
     this.y = y;
     this.old_x = x;
@@ -77,14 +80,19 @@ class PhysicsPoint {
     this.force_y = 0;
     this.bounce_index = 0.9;
     this.drag_index = 0.99;
-    this.friction_index = 0.9;
+    this.friction_index = 0.7;
     this.mass = mass;
-    this.pinned = pinned;
+    this.pinned = false;
+    this.lifetime = -1;
     this.floor_level = 20;
     this.ceiling_level = 20;
     this.visible = visible;
   }
   update(dt) {
+    if (this.lifetime > 0) {
+      this.lifetime -= 1;
+    }
+    
     if (this.pinned) return;
     
     this.vel_x = this.x - this.old_x;

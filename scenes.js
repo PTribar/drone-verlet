@@ -5,11 +5,9 @@
  > submitted notification
 
 :::features:::
-1. view highscores in menu
 2. add achievements
 3. drone customize
 4. wacky mode
-5. weekly leaderboards
 
 :::design:::
 1. background (optional)
@@ -115,18 +113,16 @@ function title_scene_init() {
   
   updateLogWindow = new Window({
     contents: [
-      {content: 'v1.3 Patch Notes', contentAlign: CENTER, contentSize: 36},
+      {content: 'v1.4 Patch Notes', contentAlign: CENTER, contentSize: 36},
       {content: '', contentAlign: CENTER, contentSize: 32},
       {content: '- system changes -', contentAlign: CENTER, contentSize: 32},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '1. camera optimized ', contentAlign: LEFT, contentSize: 24},
-      {content: ' * no delays at fast speeds', contentAlign: LEFT, contentSize: 20},
-      {content: '', contentAlign: LEFT, contentSize: 12},
+      {content: '1. score system optimized ', contentAlign: LEFT, contentSize: 24},
       {content: '', contentAlign: CENTER, contentSize: 32},
       {content: '- features -', contentAlign: CENTER, contentSize: 32},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '1. added leaderboards', contentAlign: LEFT, contentSize: 24},
-      {content: ' * updates everyweek', contentAlign: LEFT, contentSize: 20},
+      {content: '1. added sparks', contentAlign: LEFT, contentSize: 24},
+      {content: ' * sparks will fly when crashing', contentAlign: LEFT, contentSize: 20},
     ],
     contentPosition: TOP,
     contentSize: 16,
@@ -152,7 +148,7 @@ function title_scene() {
   fill(secondaryColor);
   textSize(32);
   textAlign(RIGHT);
-  text('v1.3', nativeWidth-16, nativeHeight-16);
+  text('v1.4', nativeWidth-16, nativeHeight-16);
   textSize(96);
   textAlign(CENTER);
   text('DRONE VERLET', nativeWidth/2, nativeHeight*0.45);
@@ -559,7 +555,8 @@ let PE; // Physics Environment
 let SH; // Scene Handler
 var pressed = new Set();
 let drone;
-let score;
+let finalScore;
+let baseScore;
 let localEntries = [];
 let savedEntries = [];
 let allEntries = [];
@@ -569,7 +566,6 @@ let camera;
 
 let textSizeAnim;
 let canControl;
-let isGrounded;
 let groundedTimer;
 
 let isTyping;
@@ -578,12 +574,12 @@ let nameInput = [];
 // game_scene code ----------------------------------
 function game_scene_init() {
   
-  score = 0;
+  finalScore = 0;
+  baseScore = 0;
   camera = createVector(0, 0);
   retryScreen = new RetryScreen();
   textSizeAnim = 250;
   canControl = true;
-  isGrounded = false;
   groundedTimer = 0;
   isTyping = false;
 }
@@ -594,16 +590,7 @@ function game_scene() {
   camera.x = drone.center.x + nativeWidth/2 + drone.center.vel_x;
   textAlign(CENTER);
   noStroke();
-  score = drone.center.x/1000;
-  
-  // score animation and update
-  if (int(score) - int(prevScore) != 0) {
-    textSizeAnim = 200;
-  }
-  textSizeAnim = lerp(textSizeAnim, 150, 0.1);
-  textSize(textSizeAnim);
-  fill(secondaryColor);
-  text(int(score), nativeWidth/2, nativeHeight/3);
+  baseScore = drone.center.x/1000;
   
   // draw ground and follow drone
   push();
@@ -613,8 +600,8 @@ function game_scene() {
   // drone controls
   PE.simulate(dt);
   PE.points.forEach(point => {
-    point.floor_level = 20 + 2/PI * (nativeHeight/2-60)*atan(score/170);
-    point.ceiling_level = 20 + 2/PI * (nativeHeight/2-60)*atan(score/170);
+    point.floor_level = 20 + 2/PI * (nativeHeight/2-60)*atan(baseScore/170);
+    point.ceiling_level = 20 + 2/PI * (nativeHeight/2-60)*atan(baseScore/170);
   })
   droneControl(drone);
 
@@ -622,21 +609,35 @@ function game_scene() {
   drone.render();
   
   drawGround(drone.drone_points[0].floor_level, drone.drone_points[0].ceiling_level);
-  pop();
   
-  // update previous score
-  prevScore = score;
-  
-  // check if grounded
-  isGrounded = drone.isGrounded();
-  if (isGrounded) {
+  if (drone.onFloor) {
     groundedTimer += 1;
   } else {
     groundedTimer = 0;
   }
+  pop();
+  
+  // update previous score
+  if (canControl) {
+    finalScore = int(baseScore);
+  }
+  // score animation and update
+  if (finalScore - prevScore != 0) {
+    textSizeAnim = 200;
+  }
+  prevScore = finalScore;
+  
+  const maxTextLength = 6;
+  let textSizeMultiplier = maxTextLength/(finalScore.toString().length);
+  textSizeMultiplier = textSizeMultiplier<1? textSizeMultiplier : 1;
+  textSizeAnim = lerp(textSizeAnim, 150, 0.1);
+  textSize(textSizeAnim*textSizeMultiplier);
+  fill(secondaryColor);
+  text(finalScore, nativeWidth/2, nativeHeight/3);
+  
   
   // game over condition
-  if (groundedTimer > 70 && int(score) != 0) {
+  if (groundedTimer > 70 && finalScore != 0) {
     retryScreen.active = true;
     if (canControl) {
       isTyping = true;

@@ -336,7 +336,6 @@ class RetryScreen {
   }
   
   showResults() {
-    let finalScore = int(score);
     if (this.active) {
       this.fontSizeAnim.animate();
       this.highscoreSizeAnim.forEach(anim => {
@@ -345,7 +344,11 @@ class RetryScreen {
     }
     noStroke();
     fill(secondaryColor);
-    textSize(this.fontSizeAnim.val);
+    const maxTextLength = 4;
+    let textSizeMultiplier = maxTextLength/(finalScore.toString().length);
+    textSizeMultiplier = textSizeMultiplier<1? textSizeMultiplier : 1;
+  
+    textSize(this.fontSizeAnim.val * textSizeMultiplier);
     text(finalScore, this.x, this.y-210);
     allEntries = savedEntries.concat(localEntries);
     
@@ -383,7 +386,7 @@ class RetryScreen {
     database.getScores(savedEntries);
     var result = {
       name: nameInput.join(""),
-      score: int(score)
+      score: finalScore
     }
     localEntries[localEntries.length] = {
       name: result.name,
@@ -397,7 +400,7 @@ class RetryScreen {
 function submitScore() {
   var result = {
     name: nameInput.join(""),
-    score: int(score)
+    score: finalScore
   }
   
   database.ref = database.getRef('week'+database.curr_week);
