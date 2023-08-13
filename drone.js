@@ -23,6 +23,8 @@ class Drone {
     this.onFloor = false;
     this.onCeiling = false;
     this.sparks = [];
+    this.sparkThreshold = 20;
+    this.grazeTime = 0;
     
     this.center = PE.createPoint(this.x, this.y);
     
@@ -163,45 +165,11 @@ class Drone {
       point.applyForce(this.right_force.x, this.right_force.y);
     })
     
-    this.onFloor = this.checkFloor();
-    this.onCeiling = this.checkCeiling();
+    this.checkFloorCeiling();
 
-    
     if (debug) {
       this.debug();
     }
-  }
-  
-  checkFloor() {
-    let onFloor = false;
-    this.drone_points.forEach(point => {
-      let onFloorCondition = point.y+1 >= nativeHeight-point.floor_level;
-      onFloor = onFloorCondition || onFloor;
-      if (onFloorCondition) {
-        
-        // spark function //
-        this.renderSparks(point.x, point.y)
-      }
-    })
-    
-    return onFloor;
-  }
-  
-  checkCeiling() {
-    
-    let onCeiling = false;
-    this.drone_points.forEach(point => {
-      let onCeilingCondition = point.y-1 <= point.ceiling_level;
-      onCeiling = onCeilingCondition || onCeiling;
-      if (onCeilingCondition) {
-        
-        // spark function //
-        this.renderSparks(point.x, point.y)
-
-      }
-    })
-    
-    return onCeiling;
   }
   
   render() {
@@ -217,9 +185,9 @@ class Drone {
     push();
     
     let trailLeftOpacity = atan(mag(this.left_points[1].vel_x, this.left_points[1].vel_y)/25)/(PI/2);
-    trailLeftOpacity *= pow(trailLeftOpacity, 3)*50 + 150;
+    trailLeftOpacity *= pow(trailLeftOpacity, 3)*30 + 50;
     let trailRightOpacity = atan(mag(this.right_points[0].vel_x, this.right_points[1].vel_y)/25)/(PI/2);
-    trailRightOpacity *= pow(trailRightOpacity, 3)*50 + 150;
+    trailRightOpacity *= pow(trailRightOpacity, 3)*30 + 50;
     let trailWeight = 10;
     strokeCap(SQUARE)
     
@@ -344,29 +312,68 @@ class Drone {
     
     pop();
     
-    this.renderSparks();
-  }
-  
-  renderSparks(x, y) {
-    push();
-    stroke(secondaryColor);
-    let quantity = 10;
-    if (this.sparks.length < quantity) {
-      let spark = PE.createPoint(x, y);
-      spark.applyForce(this.vel_x*random(-10000, 1000),
-                       (this.vel_x/2+this.vel_y)/2*random(-10000, 1000));
-      spark.lifetime = 10;
-      
-      this.sparks.push(spark);
-    }
-    
     this.sparks.forEach((spark, index) => {
       if (spark.lifetime == 0) {
         this.sparks.splice(index, 1);
       }
-      line(spark.x, spark.y, spark.old_x, spark.old_y)
+      push();
+      strokeWeight(4);
+      stroke(secondaryColor);
+      line(spark.x, spark.y, spark.old_x, spark.old_y);
+      pop();
     })
-    pop();
+    if (this.sparks.length > 0) {
+      this.grazeTime += 1;
+    } else {
+      this.grazeTime = 0;
+    }
+  }
+  
+  checkFloorCeiling() {
+    let onFloor = false;
+    let onCeiling = false;
+    let droneSpeed = mag(this.vel_x, this.vel_y);
+    
+    this.drone_points.forEach(point => {
+      
+      let onFloorCondition = point.y+1 >= nativeHeight-point.floor_level;
+      onFloor = onFloorCondition || onFloor;
+      
+      let onCeilingCondition = point.y-1 <= point.ceiling_level;
+      onCeiling = onCeilingCondition || onCeiling;
+      
+      let sparkCondition = ((point.y+15 >= nativeHeight-point.floor_level) &&
+                           (droneSpeed > this.sparkThreshold)) ||
+                           ((point.y-15 <= point.ceiling_level) &&
+                           (droneSpeed > this.sparkThreshold));
+    
+      if (droneSpeed > 100) {
+        point.friction_index = max(40/droneSpeed, 0.002);
+      } else {
+        point.friction_index = 0.4;
+      }
+      if (sparkCondition) {  
+        // spark function //
+        this.createSparks(point.x, point.y);
+        
+      }
+    })
+    
+    this.onFloor = onFloor;
+    this.onCeiling = onCeiling;
+  }
+  
+  createSparks(x, y) {
+    let quantityLimit = mag(this.vel_x, this.vel_y)/10;
+    if (this.sparks.length < quantityLimit) {
+      
+      let spark = PE.createPoint(x, y);
+      spark.x += this.vel_x*random(-4, -0.1);
+      spark.y += (this.vel_x/10+this.vel_y)/2*random(-5, 5);
+      spark.lifetime = 10;
+      
+      this.sparks.push(spark);
+    }
   }
   
   

@@ -113,16 +113,20 @@ function title_scene_init() {
   
   updateLogWindow = new Window({
     contents: [
-      {content: 'v1.4 Patch Notes', contentAlign: CENTER, contentSize: 36},
+      {content: 'v1.5 Patch Notes', contentAlign: CENTER, contentSize: 36},
       {content: '', contentAlign: CENTER, contentSize: 32},
       {content: '- system changes -', contentAlign: CENTER, contentSize: 32},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '1. score system optimized ', contentAlign: LEFT, contentSize: 24},
+      {content: '1.graze condition optimized ', contentAlign: LEFT, contentSize: 24},
+      {content: ' * easier to graze', contentAlign: LEFT, contentSize: 20},
+      {content: '', contentAlign: LEFT, contentSize: 12},
+      {content: '2.camera movement changes', contentAlign: LEFT, contentSize: 24},
+      {content: ' * smoother camera & shake added', contentAlign: LEFT, contentSize: 20},
       {content: '', contentAlign: CENTER, contentSize: 32},
       {content: '- features -', contentAlign: CENTER, contentSize: 32},
       {content: '', contentAlign: LEFT, contentSize: 12},
-      {content: '1. added sparks', contentAlign: LEFT, contentSize: 24},
-      {content: ' * sparks will fly when crashing', contentAlign: LEFT, contentSize: 20},
+      {content: '1.added graze bonus', contentAlign: LEFT, contentSize: 24},
+      {content: ' * graze continuously to\n   gain bonus points', contentAlign: LEFT, contentSize: 20},
     ],
     contentPosition: TOP,
     contentSize: 16,
@@ -148,7 +152,7 @@ function title_scene() {
   fill(secondaryColor);
   textSize(32);
   textAlign(RIGHT);
-  text('v1.4', nativeWidth-16, nativeHeight-16);
+  text('v1.5', nativeWidth-16, nativeHeight-16);
   textSize(96);
   textAlign(CENTER);
   text('DRONE VERLET', nativeWidth/2, nativeHeight*0.45);
@@ -426,6 +430,7 @@ function options_scene() {
   
   let dt = 1/60;
   camera.x = 0;
+  camera.y = 0;
   droneControl(demoDrone);
   drawGround(demoDrone.body_points[0].floor_level, demoDrone.body_points[0].ceiling_level);
   // drone controls
@@ -557,6 +562,14 @@ var pressed = new Set();
 let drone;
 let finalScore;
 let baseScore;
+let floorCeilingOffset;
+
+let effectiveGrazeScore;
+let finalGrazeScore;
+let grazeScore;
+let shownGrazeScore;
+let grazeScoreAnim;
+
 let localEntries = [];
 let savedEntries = [];
 let allEntries = [];
@@ -571,70 +584,189 @@ let groundedTimer;
 let isTyping;
 let nameInput = [];
 
+let armPower;
+
+
 // game_scene code ----------------------------------
 function game_scene_init() {
+  floorCeilingOffset = 0;
   
   finalScore = 0;
   baseScore = 0;
+  
+  effectiveGrazeScore = 0;
+  finalGrazeScore = 0;
+  grazeScore = 0;
+  shownGrazeScore = 0;
+  grazeScoreAnim = new AnimationValue(150, -nativeWidth*0.5, nativeWidth, function(t){
+    return 0.5*atan(20*t)+pow(2, 20*(t-0.9));
+  });
+  
   camera = createVector(0, 0);
   retryScreen = new RetryScreen();
   textSizeAnim = 250;
   canControl = true;
   groundedTimer = 0;
   isTyping = false;
+  
+  
+  armPower = new ExpandingArms(10000, nativeHeight/2);
+  
 }
 
 function game_scene() {
   
+  const droneSpeed = mag(drone.vel_x, drone.vel_y);
+  
   let dt = 1/60;
-  camera.x = drone.center.x + nativeWidth/2 + drone.center.vel_x;
+  
+  const cameraSnapSpeed = min(0.8, max(0.5,1-1/droneSpeed));
+  
+  camera.x = lerp(camera.x, drone.x + nativeWidth/2 + drone.vel_x, cameraSnapSpeed);
+  camera.y = lerp(camera.y, 0, cameraSnapSpeed);
+  if (abs(camera.x-drone.x-nativeWidth/2) > nativeWidth) {
+    camera.x = (1 + sign(camera.x))*nativeWidth
+  }
+  
+  // camera shake
+  if (drone.sparks.length > 0) {
+    cameraShake(droneSpeed, log(droneSpeed+1)*1.4);
+  }
+  if (armPower.pushAnim.currFrame>0 && armPower.pushAnim.isPlaying) {
+    armPower.cameraShakeMagnitude = 10;
+  }
+  if (armPower.lengthAnim.currFrame == armPower.lengthAnim.frames && armPower.lengthAnim.isPlaying) {
+    armPower.cameraShakeMagnitude = 20;
+  }
+  if (armPower.lengthEndAnim.currFrame>armPower.lengthEndAnim.frames-10 && !armPower.lengthEndAnim.isFinished) {
+    armPower.cameraShakeMagnitude = 10;
+  }
+  if (armPower.sparks.length>0) {
+    armPower.cameraShakeMagnitude = 5;
+  }
+  cameraShake(100, armPower.cameraShakeMagnitude);
+  
   textAlign(CENTER);
   noStroke();
   baseScore = drone.center.x/1000;
   
   // draw ground and follow drone
   push();
-  translate(nativeWidth-camera.x, 0);
+  translate(nativeWidth-camera.x, camera.y);
   
+  
+//   if (armPower.lifetime == 0) {
+//     armPower = new ExpandingArms(drone.x + drone.vel_x*1000, nativeHeight/2);
+//   }
+//   armPower.render();
+//   armPower.update(drone.drone_points[0].floor_level, drone.drone_points[0].ceiling_level);
+  
+    
+//   if (armPower.x - drone.x < nativeWidth) {
+//     armPower.vel_x = max(drone.vel_x*0.99, armPower.vel_x);
+//   }
+  
+//   const droneCenter = createVector(drone.x+drone.vel_x,
+//                                    drone.y+drone.vel_y);
+//   const armPowCenter = createVector(armPower.x-armPower.vel_x,
+//                                     armPower.y-armPower.vel_y);
+  
+//   if (dist(droneCenter.x, droneCenter.y, armPowCenter.x, armPowCenter.y) < armPower.size*8) {
+//     armPower.activeMeter += 1;
+//   }
   
   // drone controls
   PE.simulate(dt);
-  PE.points.forEach(point => {
-    point.floor_level = 20 + 2/PI * (nativeHeight/2-60)*atan(baseScore/170);
-    point.ceiling_level = 20 + 2/PI * (nativeHeight/2-60)*atan(baseScore/170);
-  })
-  droneControl(drone);
-
-  drone.update();
-  drone.render();
+  // floor and ceiling
+  const gapLimit = 70;
+  const closingSpeed = 170;
+  floorCeilingOffset += armPower.expansion;
   
+  PE.points.forEach(point => {
+    point.floor_level = 30 + 2/PI * (nativeHeight/2-gapLimit)*atan((baseScore+floorCeilingOffset)/closingSpeed);
+    point.ceiling_level = 30 + 2/PI * (nativeHeight/2-gapLimit)*atan((baseScore+floorCeilingOffset)/closingSpeed);
+  })
+  droneControl(drone, true);
+
+  // update drone physics
+  drone.update();
+  
+  // render ground
   drawGround(drone.drone_points[0].floor_level, drone.drone_points[0].ceiling_level);
   
-  if (drone.onFloor) {
+  pop();
+
+  // timer used to determine if game is over
+  if (drone.onFloor && droneSpeed < 100) {
     groundedTimer += 1;
   } else {
     groundedTimer = 0;
   }
-  pop();
+
+  
+  // graze bonus system
+  if (drone.grazeTime > 30 && !drone.onFloor && !drone.onCeiling) {
+    grazeScore += mag(drone.vel_x, drone.vel_y)/700;
+  } else {
+    if (grazeScore != 0) {
+      effectiveGrazeScore = int(grazeScore) * log(int(grazeScore)/20+1);
+      finalGrazeScore += effectiveGrazeScore;
+      if (int(effectiveGrazeScore) > 0) {
+        grazeScoreAnim.reset();
+        shownGrazeScore = effectiveGrazeScore;
+      }
+    }
+    grazeScore = 0;
+  }
+  // render graze score animation
+  grazeScoreAnim.animate();
+  if (int(shownGrazeScore) > 0 && grazeScoreAnim.isPlaying) {
+    push();
+    strokeWeight(12);
+    stroke(secondaryColor);
+    fill(primaryColor);
+    textSize(70);
+    textAlign(RIGHT);
+    text('+'+int(shownGrazeScore), grazeScoreAnim.val, nativeHeight*0.4);
+    strokeWeight(8);
+    textAlign(LEFT);
+    textSize(30);
+    text('GRAZE BONUS', grazeScoreAnim.val+20, nativeHeight*0.4);
+    pop();
+  }
+  
   
   // update previous score
   if (canControl) {
-    finalScore = int(baseScore);
+    finalScore = int(baseScore + finalGrazeScore);
   }
   // score animation and update
-  if (finalScore - prevScore != 0) {
-    textSizeAnim = 200;
+  const scoreDiff = finalScore - prevScore
+  if (scoreDiff != 0) {
+    if (textSizeAnim < 200) {
+      textSizeAnim = 200;
+    }
+    if (scoreDiff > 1) {
+      textSizeAnim = 250;
+    }
   }
   prevScore = finalScore;
   
   const maxTextLength = 6;
   let textSizeMultiplier = maxTextLength/(finalScore.toString().length);
   textSizeMultiplier = textSizeMultiplier<1? textSizeMultiplier : 1;
-  textSizeAnim = lerp(textSizeAnim, 150, 0.1);
+  if (textSizeAnim < 200) {
+    textSizeAnim = lerp(textSizeAnim, 150, 0.1);
+  } else {
+    textSizeAnim = lerp(textSizeAnim, 150, 0.04);
+  }
+  push();
   textSize(textSizeAnim*textSizeMultiplier);
+  strokeWeight(16);
+  stroke(primaryColor);
   fill(secondaryColor);
   text(finalScore, nativeWidth/2, nativeHeight/3);
-  
+  pop();
   
   // game over condition
   if (groundedTimer > 70 && finalScore != 0) {
@@ -646,6 +778,12 @@ function game_scene() {
     }
     canControl = false;
   }
+  
+  push();
+  translate(nativeWidth-camera.x, camera.y);
+  drone.render();
+  pop();
+  
   retryScreen.render();
   
   menuButton.render();

@@ -7,6 +7,14 @@ function distance(p0, p1) {
 function clamp(val, minVal, maxVal) {
   return min(maxVal, max(minVal, val));
 }
+
+function sign(val) {
+  if (val != 0) {
+    return abs(val)/val;
+  } else {
+    return 0;
+  }
+}
   
 function setBrightness(col, targetBright) {
   let currBright = brightness(col);
@@ -16,4 +24,15 @@ function setBrightness(col, targetBright) {
     return color(red(col)*ratio, green(col)*ratio, blue(col)*ratio);
   else
     return color(0);
+}
+
+function polygon(x, y, radius, npoints) {
+  let angle = TWO_PI / npoints;
+  beginShape();
+  for (let a = 0; a < TWO_PI; a += angle) {
+    let sx = x + cos(a) * radius;
+    let sy = y + sin(a) * radius;
+    vertex(sx, sy);
+  }
+  endShape(CLOSE);
 }

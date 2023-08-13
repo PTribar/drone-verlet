@@ -166,41 +166,46 @@ function retry() {
   staticDrone.drone_points.forEach(point => {
     PE.destroyPoint(point);
   })
-  // if (SH.getCurrSceneName() == 'game_scene') {
-    drone = new Drone(0, nativeHeight*0.8);
-  // } else if (SH.getCurrSceneName() == 'options_scene') {
-    demoDrone = new Drone(nativeWidth*0.5, nativeHeight*0.9);
-  // }
+  
+  drone = new Drone(0, nativeHeight*0.9);
+  demoDrone = new Drone(nativeWidth*0.5, nativeHeight*0.9);
+  armPower = new ExpandingArms(10000, nativeHeight/2);
   
   updateTheme();
+  effectiveGrazeScore = 0;
+  finalGrazeScore = 0;
+  grazeScore = 0;
+  floorCeilingOffset = 0;
   
   retryScreen.active = false;
   retryScreen.submitButton.isActive = false;
   canControl = true;
 }
 
+
 function droneControl(drone) {
   let tapLeft = false;
   let tapRight = false;
   
   touches.forEach(touch => {
-    if (touch.x < windowWidth/2) {
+    if (touch.winX < windowWidth/2) {
       tapLeft = true;
     } else {
       tapRight = true;
     }
   })
-  
   const leftControl = !revControlButton.options.value?"KeyQ":"KeyP";
   const rightControl = !revControlButton.options.value?"KeyP":"KeyQ";
   
+  let leftPressed = (pressed.has(leftControl) || tapLeft)
+  let rightPressed = (pressed.has(rightControl) || tapRight)
   
-  if ((pressed.has(leftControl) || tapLeft) && canControl) {
+  if (leftPressed && canControl) {
     drone.left_thrust = lerp(drone.left_thrust, maxThrustSlider.value, thrustSensSlider.value);
   } else {
     drone.left_thrust = lerp(drone.left_thrust, autoThrustSlider.value, releaseSensSlider.value);
   }
-  if ((pressed.has(rightControl) || tapRight) && canControl) {
+  if (rightPressed && canControl) {
     drone.right_thrust = lerp(drone.right_thrust, maxThrustSlider.value, thrustSensSlider.value);
   } else {
     drone.right_thrust = lerp(drone.right_thrust, autoThrustSlider.value, releaseSensSlider.value);
@@ -210,29 +215,33 @@ function droneControl(drone) {
 function drawGround(floor_level, ceiling_level) {
   push();
   if (groundStyle == 0) {
-    strokeWeight(5);
+    strokeWeight(10);
     fill(secondaryColor);
     stroke(secondaryColor);
     offsetX = nativeWidth/2*floor(camera.x/(nativeWidth/2));
     line(offsetX-nativeWidth*2, nativeHeight-floor_level, offsetX+nativeWidth*2, nativeHeight-floor_level);
+    strokeWeight(5);
     for (let i=-nativeWidth; i<nativeWidth; i+=nativeWidth/20) {
       quad(offsetX+i, nativeHeight-floor_level,
-           offsetX+i+20, nativeHeight-floor_level,
-           offsetX+i, nativeHeight-floor_level+20,
-           offsetX+i-20, nativeHeight-floor_level+20);
+           offsetX+i+25, nativeHeight-floor_level,
+           offsetX+i, nativeHeight-floor_level+25,
+           offsetX+i-25, nativeHeight-floor_level+25);
     }
-    line(offsetX-nativeWidth*2, nativeHeight-floor_level+20, offsetX+nativeWidth*2, nativeHeight-floor_level+20);
-    line(offsetX-nativeWidth*2, nativeHeight-floor_level+40, offsetX+nativeWidth*2, nativeHeight-floor_level+40);
+    line(offsetX-nativeWidth*2, nativeHeight-floor_level+25, offsetX+nativeWidth*2, nativeHeight-floor_level+25);
+    line(offsetX-nativeWidth*2, nativeHeight-floor_level+45, offsetX+nativeWidth*2, nativeHeight-floor_level+45);
 
+    
+    strokeWeight(10);
     line(offsetX-nativeWidth*2, ceiling_level, offsetX+nativeWidth*2, ceiling_level);
+    strokeWeight(5);
     for (let i=-nativeWidth; i<nativeWidth; i+=nativeWidth/20) {
       quad(offsetX+i, ceiling_level,
-           offsetX+i+20, ceiling_level,
-           offsetX+i, ceiling_level-20,
-           offsetX+i-20, ceiling_level-20);
+           offsetX+i+25, ceiling_level,
+           offsetX+i, ceiling_level-25,
+           offsetX+i-25, ceiling_level-25);
     }
-    line(offsetX-nativeWidth*2, ceiling_level-20, offsetX+nativeWidth*2, ceiling_level-20);
-    line(offsetX-nativeWidth*2, ceiling_level-40, offsetX+nativeWidth*2, ceiling_level-40);
+    line(offsetX-nativeWidth*2, ceiling_level-25, offsetX+nativeWidth*2, ceiling_level-25);
+    line(offsetX-nativeWidth*2, ceiling_level-45, offsetX+nativeWidth*2, ceiling_level-45);
   } else if (groundStyle == 1) {
     strokeWeight(10);
     fill(secondaryColor);
@@ -265,6 +274,11 @@ function draw() {
   SH.render(SH.curr_scene);
 }
 
+function cameraShake(speed, magnitude) {
+  
+  camera.x += noise(frameCount*speed)*magnitude-magnitude/2;
+  camera.y += noise(0, frameCount*speed)*magnitude-magnitude/2;
+}
 
 
 class RetryScreen {
@@ -418,14 +432,20 @@ class AnimationValue {
     this.val = startVal;
     this.endVal = endVal;
     this.isPlaying = false;
+    this.isFinished = false;
     this.easing = easing;
     this.onLoop = onLoop;
+    this.totalFrames = frames+delay;
   }
   
   animate() {
     var t = max(0, this.currFrame/this.frames);
-    if (this.easing == 'quadratic-in') {
-      this.val = lerp(this.startVal, this.endVal, t);
+    if (typeof this.easing == 'function') {
+      this.val = lerp(this.startVal, this.endVal, this.easing(t));
+    }
+    
+    else if (this.easing == 'quadratic-in') {
+      this.val = lerp(this.startVal, this.endVal, t*t);
     } else if (this.easing == 'quadratic-out') { 
       this.val = lerp(this.startVal, this.endVal, -t*(t-2));
     } else if (this.easing === 'ease-out-back') {
@@ -442,12 +462,12 @@ class AnimationValue {
     }
     
     this.currFrame += 1;
-    if (this.currFrame >= this.frames) {
+    if (this.currFrame > this.frames) {
       this.isPlaying = false;
+      this.isFinished = true;
       this.currFrame = this.frames;
       
       if (this.onLoop) {
-      this.isPlaying = false;
         this.currFrame = 0;
       }
     } else {
