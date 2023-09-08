@@ -14,11 +14,13 @@ let database;
 let font;
 let scores;
 
+let dt = 1/60;
 let resolution = 1;
 let dynamicResolution = true;
 let nativeWidth = 1440;
 let nativeHeight = 1280;
 
+let droneSpawnHeight;
 
 function preload() {
   font = loadFont('PressStart2P-Regular.ttf');
@@ -31,9 +33,10 @@ function setup() {
   secondaryColor = themeColors[0].secondary;
   accentColor = themeColors[0].accent;
   groundStyle = 0;
+  droneSpawnHeight = nativeHeight-BASE_FLOOR_LEVEL-200;
   
   PE = new PhysicsEnvironment();
-  drone = new Drone(0, nativeHeight*0.9);
+  drone = new Drone(0, droneSpawnHeight);
   database_init();
   title_scene_init();
   options_scene_init();
@@ -66,7 +69,7 @@ function setup() {
 }
 
 function mousePressed() {
-  // print(mouseX, mouseY);
+  print(mouseX, mouseY);
 }
 
 function keyPressed(evt) {
@@ -167,15 +170,19 @@ function retry() {
     PE.destroyPoint(point);
   })
   
-  drone = new Drone(0, nativeHeight*0.9);
-  demoDrone = new Drone(nativeWidth*0.5, nativeHeight*0.9);
-  armPower = new ExpandingArms(10000, nativeHeight/2);
+  gameTimer = 0;
+  floorLevel = 30;
+  ceilingLevel = 30;
+  
+
+  drone = new Drone(0, droneSpawnHeight);
+  demoDrone = new Drone(nativeWidth*0.5, droneSpawnHeight);
+  armPower = new ExpandingArms(50000, nativeHeight/2);
   
   updateTheme();
   effectiveGrazeScore = 0;
   finalGrazeScore = 0;
   grazeScore = 0;
-  floorCeilingOffset = 0;
   
   retryScreen.active = false;
   retryScreen.submitButton.isActive = false;
@@ -258,6 +265,7 @@ function drawGround(floor_level, ceiling_level) {
 }
 
 function draw() {
+  
   if (dynamicResolution) {
     if (windowHeight/windowWidth<nativeHeight/nativeWidth) {
       resolution = windowHeight/nativeHeight;

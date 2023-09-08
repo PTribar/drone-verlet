@@ -25,6 +25,9 @@ function setBrightness(col, targetBright) {
   else
     return color(0);
 }
+function setOpacity(col, targetOpacity) {
+  return color(red(col), green(col), blue(col), targetOpacity);
+}
 
 function polygon(x, y, radius, npoints) {
   let angle = TWO_PI / npoints;

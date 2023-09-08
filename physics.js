@@ -95,8 +95,11 @@ class PhysicsPoint {
     
     if (this.pinned) return;
     
-    this.vel_x = this.x - this.old_x;
+    
+    this.vel_x = (this.x - this.old_x);
     this.vel_y = (this.y - this.old_y) * this.drag_index;
+    
+
 
     // The current position becomes the old one
     this.old_x = this.x;
